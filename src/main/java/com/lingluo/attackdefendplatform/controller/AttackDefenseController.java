@@ -4,7 +4,6 @@ package com.lingluo.attackdefendplatform.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.stp.StpUtil;
-import com.lingluo.attackdefendplatform.common.enums.RoleEnum;
 import com.lingluo.attackdefendplatform.common.result.Result;
 import com.lingluo.attackdefendplatform.exception.BusinessException;
 import com.lingluo.attackdefendplatform.model.dto.AttackRecordPageDTO;
@@ -16,10 +15,10 @@ import com.lingluo.attackdefendplatform.model.entity.AttackDefenseRecord;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseTemplates;
 import com.lingluo.attackdefendplatform.model.form.AttackRecordForm;
 import com.lingluo.attackdefendplatform.model.form.AttackTeamForm;
-import com.lingluo.attackdefendplatform.model.form.AttackTeamMemberForm;
 import com.lingluo.attackdefendplatform.model.form.AttackTemplateForm;
 import com.lingluo.attackdefendplatform.model.query.AttackRecordQuery;
 import com.lingluo.attackdefendplatform.service.AttackDefenseRecordService;
+import com.lingluo.attackdefendplatform.service.AttackDefenseTargetSystemService;
 import com.lingluo.attackdefendplatform.service.AttackDefenseTemplatesService;
 import com.lingluo.attackdefendplatform.service.impl.oss.MinioOssService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,8 +39,9 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class AttackDefenseController {
     
-    private final AttackDefenseRecordService attackDefenseRecordService;
-    private final AttackDefenseTemplatesService attackDefenseTemplatesService;
+    private final AttackDefenseRecordService recordService;
+    private final AttackDefenseTemplatesService templatesService;
+    private final AttackDefenseTargetSystemService targetSystemService;
     private final MinioOssService minioOssService;
     
     // 时间格式化器
@@ -74,8 +74,9 @@ public class AttackDefenseController {
         defenseRecord.setTemplate(form.getTemplate());
         defenseRecord.setSid(form.getSid());
         defenseRecord.setUmpire(form.getUmpire());
-
-        boolean saved = attackDefenseRecordService.save(defenseRecord);
+        defenseRecord.setCommitTime(LocalDateTime.now());
+        
+        boolean saved = recordService.save(defenseRecord);
         if(!saved)return Result.failed("保存失败，请检查字段是否合规");
         return Result.success();
     }
@@ -89,6 +90,14 @@ public class AttackDefenseController {
         AttackDefenseTemplates template = new AttackDefenseTemplates();
 
         template.setTitle(form.getTitle());
+        AttackDefenseTemplates one = templatesService.lambdaQuery()
+                .select(AttackDefenseTemplates::getId)
+                .eq(AttackDefenseTemplates::getTitle, template.getTitle())
+                .one();
+        if(one!=null){
+            return Result.failed("已存在相同标题的模板");
+        }
+
         template.setType(form.getType());
         template.setDescription(form.getDescription());
 
@@ -109,7 +118,7 @@ public class AttackDefenseController {
         template.setInUse(form.getIn_use());
         template.setUseNum(0); // 新建模板使用次数为0
 
-        boolean saved = attackDefenseTemplatesService.save(template);
+        boolean saved = templatesService.save(template);
 
         if (!saved) {
             return Result.failed("未能成功保存模板，请检查字段");
@@ -124,7 +133,7 @@ public class AttackDefenseController {
     public Result<Void> createAttackTeam(
             @Valid AttackTeamForm form 
     ) {
-        Boolean created = attackDefenseRecordService.createTeam(
+        Boolean created = recordService.createTeam(
                 form.getAttack(),
                 form.getCn_name(),
                 form.getEn_name(), 
@@ -146,7 +155,7 @@ public class AttackDefenseController {
        Integer tid
     ) {
         try {
-            Boolean b = attackDefenseRecordService.addMemberToTeam(mid, tid);
+            Boolean b = recordService.addMemberToTeam(mid, tid);
             if(b)return Result.success();
             else return Result.failed("插入失败，请重试");
         }catch(BusinessException e){
@@ -164,7 +173,7 @@ public class AttackDefenseController {
             Integer tid
     ){
         try {
-            Boolean b = attackDefenseRecordService.kickMemberFromTeam(mid, tid);
+            Boolean b = recordService.kickMemberFromTeam(mid, tid);
             if(b)return Result.success();
             else return Result.failed("删除失败，请重试");
         }catch(BusinessException e){
@@ -210,12 +219,12 @@ public class AttackDefenseController {
         Optional.ofNullable(form.getTemplate()).ifPresent(defenseRecord::setTemplate);
         Optional.ofNullable(form.getUmpire()).ifPresent(defenseRecord::setUmpire);
         
-        //变为待审批状态时更新提交时间
-        Optional.ofNullable(form.getState()).ifPresent(value->{
-            if(value==2)defenseRecord.setCommitTime(LocalDateTime.now());
-        });
-        
-        boolean updated = attackDefenseRecordService.updateById(defenseRecord);
+//        //变为待审批状态时更新提交时间
+//        Optional.ofNullable(form.getState()).ifPresent(value->{
+//            if(value==2)defenseRecord.setCommitTime(LocalDateTime.now());
+//        });
+//        
+        boolean updated = recordService.updateById(defenseRecord);
 
         if (!updated) {
             throw new BusinessException("更新攻防记录失败，记录ID (ID: " + form.getId() + ") 可能不存在或数据未能成功保存。");
@@ -259,7 +268,7 @@ public class AttackDefenseController {
         template.setUpdateTime(LocalDateTime.now());
 
 
-        boolean updated = attackDefenseTemplatesService.updateById(template);
+        boolean updated = templatesService.updateById(template);
 
         if (!updated) {
             throw new BusinessException("更新攻防模板失败，模板ID (ID: " + form.getId() + ") 可能不存在或数据未能成功保存。");
@@ -279,7 +288,7 @@ public class AttackDefenseController {
             LocalDateTime begin_time = parseLocalDateTime(query.getBegin_time());
             LocalDateTime end_time = parseLocalDateTime(query.getEnd_time());
 
-            AttackRecordPageDTO attackRecordPageDTO = attackDefenseRecordService.queryRecord(
+            AttackRecordPageDTO attackRecordPageDTO = recordService.queryRecord(
                     query.getOffset(),
                     query.getLimit(),
                     query.getState(),
@@ -307,7 +316,7 @@ public class AttackDefenseController {
             String title
     ){
         try {
-            AttackTemplatePageDTO attackTemplatePageDTO = attackDefenseTemplatesService.queryTemplate(offset, limit, type, title);
+            AttackTemplatePageDTO attackTemplatePageDTO = templatesService.queryTemplate(offset, limit, type, title);
             return Result.success(attackTemplatePageDTO);
         }catch (Throwable e){
             throw new BusinessException("查询攻击模板出现错误",e);
@@ -326,7 +335,7 @@ public class AttackDefenseController {
             String keyword
     ){
         try {
-            AttackTeamPageDTO attackTeamPageDTO = attackDefenseRecordService.queryTeamPage(offset, limit, keyword, attack, type);
+            AttackTeamPageDTO attackTeamPageDTO = recordService.queryTeamPage(offset, limit, keyword, attack, type);
             return Result.success(attackTeamPageDTO);
         }catch (Exception e){
             throw e;
@@ -349,26 +358,28 @@ public class AttackDefenseController {
         //什么都不传就返回自己的信息
         if (id == null || target == null || target.isEmpty()) {
             String loginId = (String) StpUtil.getLoginId();
-            AttackDefenseMember self = attackDefenseRecordService.getMemberById(Integer.valueOf(loginId));
+            AttackDefenseMember self = recordService.getMemberById(Integer.valueOf(loginId));
             return Result.success(self);
         }
         try {   
             Object resultObject = null; // 定义一个通用对象来接收查询结果
-            if (target != null) {
-                switch (target) {
-                    case "record" -> {
-                        resultObject=  attackDefenseRecordService.getById(id);
-                    }
-                    case "team" ->{
-                        resultObject= attackDefenseRecordService.getTeamById(id);
-                    }
-                    case "member" ->{
-                        StpUtil.checkRole("admin");//这是用户的全部信息，包含密码等敏感信息，只有管理员允许查看
-                        resultObject= attackDefenseRecordService.getMemberById(id);
-                    }
-                    case "template" ->{
-                        return Result.success(attackDefenseTemplatesService.getById(id));
-                    }
+            switch (target) {
+                case "record" -> {
+                    resultObject = recordService.getDetailById(id);
+                }
+                case "team" -> {
+                    resultObject = recordService.getTeamById(id);
+                }
+                case "member" -> {
+                    StpUtil.checkRole("admin");//这是用户的全部信息，包含密码等敏感信息，只有管理员允许查看
+                    resultObject = recordService.getMemberById(id);
+                }
+                case "template" -> {
+                    resultObject = templatesService.getById(id);
+                }
+                case "targetSystem" -> {
+                    StpUtil.checkRole("umpire");//裁判以上才能查询靶标系统详情
+                    resultObject = targetSystemService.getById(id);
                 }
             }
             if (resultObject == null) {
@@ -393,16 +404,19 @@ public class AttackDefenseController {
             Boolean removed=null;
             switch (target) {
                 case "record" -> {
-                    removed = attackDefenseRecordService.removeById(id);
+                    removed = recordService.removeById(id);
                 }
                 case "team" ->{
-                    removed = attackDefenseRecordService.deleteTeam(id);
+                    removed = recordService.deleteTeam(id);
                 }
                 case "member" ->{
-                    removed = attackDefenseRecordService.deleteTeamMember(id);
+                    removed = recordService.deleteTeamMember(id);
                 }
                 case "template" ->{
-                    removed = attackDefenseTemplatesService.removeById(id);
+                    removed = templatesService.deleteTemplate(id);
+                }
+                case "targetSystem" ->{
+                    removed = targetSystemService.deleteSystem(id);
                 }
             }
             if (removed == null|| !removed) {
@@ -410,9 +424,11 @@ public class AttackDefenseController {
             }
             return Result.success();
         }catch (Exception e){
-            throw new BusinessException("通过id进行攻防模块统一查询删除,目标表:"+target,e);
+            throw new BusinessException("通过id进行攻防模块统一查询删除失败,目标表:"+target+e.getMessage());
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
         }
-        
+
     }
 
 

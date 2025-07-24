@@ -38,6 +38,9 @@ public class Result<T> implements Serializable {
     public static <T> Result<T> failed(String msg) {
         return result(ResultCode.SYSTEM_EXECUTION_ERROR.getCode(), msg, null);
     }
+    public static <T> Result<T> failed(String code,String msg) {
+        return result(code, msg, null);
+    }
 
     public static <T> Result<T> judge(boolean status) {
         if (status) {

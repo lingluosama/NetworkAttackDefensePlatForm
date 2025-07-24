@@ -50,4 +50,7 @@ public class AttackDefenseMenu {
      */
     @Schema(description = "父菜单ID")
     private Integer parent;
+    
+    @Schema(description = "菜单图标")
+    private String icon;
 }

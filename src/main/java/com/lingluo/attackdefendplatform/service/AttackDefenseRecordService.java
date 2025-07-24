@@ -2,10 +2,7 @@ package com.lingluo.attackdefendplatform.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 
-import com.lingluo.attackdefendplatform.model.dto.AttackRecordPageDTO;
-import com.lingluo.attackdefendplatform.model.dto.AttackTeamPageDTO;
-import com.lingluo.attackdefendplatform.model.dto.MemberListInfoDTO;
-import com.lingluo.attackdefendplatform.model.dto.TeamMemberDTO;
+import com.lingluo.attackdefendplatform.model.dto.*;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseMember;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseRecord;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseTeam;
@@ -72,7 +69,7 @@ public interface AttackDefenseRecordService extends IService<AttackDefenseRecord
     AttackDefenseMember getMemberById(Integer id);
     TeamMemberDTO getTeamById(Integer id);
 
-    
+    AttackRecordDetailDTO getDetailById(Integer id);
     
     
 }

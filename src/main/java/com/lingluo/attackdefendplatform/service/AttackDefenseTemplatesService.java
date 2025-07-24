@@ -12,4 +12,6 @@ public interface AttackDefenseTemplatesService extends IService<AttackDefenseTem
             String title
     ) throws Throwable;
     
+    Boolean deleteTemplate(Integer id) throws Throwable;
+    
 }

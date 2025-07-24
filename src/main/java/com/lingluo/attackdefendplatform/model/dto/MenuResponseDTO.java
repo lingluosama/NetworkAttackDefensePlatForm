@@ -35,6 +35,9 @@ public class MenuResponseDTO implements Serializable {
 
     @Schema(description = "菜单标题")
     private String title;
+    
+    @Schema(description = "菜单图标")
+    private String icon;
 
     @Schema(description = "子菜单列表")
     private List<MenuResponseDTO> children = new ArrayList<>(); // 确保初始化，避免空指针

@@ -240,14 +240,14 @@ public class GlobalExceptionHandler {
             msg = "当前会话未登录";
         }
         //根据 Sa-Token 异常的类型，返回更详细的错误信息
-        return Result.failed("认证失败:"+msg); 
+        return Result.failed("A0230","认证失败:"+msg); 
     }
     @ExceptionHandler(NotRoleException.class)
     public Result<Void> handleNotRoleException(NotRoleException e) {
         String missingRole = e.getRole();
         String msg = "无权访问：缺少角色 [" + missingRole + "]";
 
-        return Result.failed("认证失败，请联系管理员升级角色:" + msg);
+        return Result.failed("A0231","认证失败，请联系管理员升级角色:" + msg);
     }
 
 }

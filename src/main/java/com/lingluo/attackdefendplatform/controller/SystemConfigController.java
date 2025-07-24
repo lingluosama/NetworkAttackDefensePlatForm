@@ -45,6 +45,7 @@ public class SystemConfigController {
         menu.setAuth(form.getAuth());
         menu.setTitle(form.getTitle());
         menu.setPath(form.getPath());
+        menu.setIcon(form.getIcon());
         if(form.getParent()==null){
             menu.setParent(-1);//不传parent默认为一级菜单
         }else{

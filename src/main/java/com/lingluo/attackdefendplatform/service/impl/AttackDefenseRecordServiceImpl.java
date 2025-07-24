@@ -7,21 +7,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
 import com.lingluo.attackdefendplatform.exception.BusinessException;
-import com.lingluo.attackdefendplatform.mapper.AttackDefenseMemberMapper;
-import com.lingluo.attackdefendplatform.mapper.AttackDefenseRecordMapper;
-import com.lingluo.attackdefendplatform.mapper.AttackDefenseTeamMapper;
-import com.lingluo.attackdefendplatform.mapper.AttackDefenseTeamMembersMapper;
+import com.lingluo.attackdefendplatform.mapper.*;
 import com.lingluo.attackdefendplatform.model.bo.AttackRecordInfoBO;
 import com.lingluo.attackdefendplatform.model.bo.AttackTeamInfoBO;
 import com.lingluo.attackdefendplatform.model.bo.MemberInfoBO;
-import com.lingluo.attackdefendplatform.model.dto.AttackRecordPageDTO;
-import com.lingluo.attackdefendplatform.model.dto.AttackTeamPageDTO;
-import com.lingluo.attackdefendplatform.model.dto.FileInfo;
-import com.lingluo.attackdefendplatform.model.dto.TeamMemberDTO;
-import com.lingluo.attackdefendplatform.model.entity.AttackDefenseMember;
-import com.lingluo.attackdefendplatform.model.entity.AttackDefenseRecord;
-import com.lingluo.attackdefendplatform.model.entity.AttackDefenseTeam;
-import com.lingluo.attackdefendplatform.model.entity.AttackDefenseTeamMembers;
+import com.lingluo.attackdefendplatform.model.dto.*;
+import com.lingluo.attackdefendplatform.model.entity.*;
 import com.lingluo.attackdefendplatform.service.AttackDefenseRecordService;
 import com.lingluo.attackdefendplatform.service.impl.oss.MinioOssService;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +32,8 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
     private final AttackDefenseTeamMapper teamMapper;
     private final AttackDefenseMemberMapper memberMapper;
     private final AttackDefenseTeamMembersMapper teamMembersMapper;
+    private final AttackDefenseTargetSystemMapper systemMapper;
+    private final AttackDefenseTemplatesMapper templatesMapper;
     private final MinioOssService minioOssService;
 
 
@@ -320,7 +313,26 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
         return teamMemberDTO;
         
     }
-    
+
+    @Override
+    public AttackRecordDetailDTO getDetailById(Integer id) {
+        AttackDefenseRecord attackDefenseRecord = this.getById(id);
+        
+        //查询关联的系统
+        QueryWrapper<AttackDefenseTargetSystem> systemQueryWrapper=new QueryWrapper<>();
+        systemQueryWrapper.eq("id",attackDefenseRecord.getSid());
+        AttackDefenseTargetSystem targetSystem = systemMapper.selectOne(systemQueryWrapper);
+        
+        //查询关联的模板
+        QueryWrapper<AttackDefenseTemplates> templateQueryWrapper=new QueryWrapper<>();
+        templateQueryWrapper.eq("title",attackDefenseRecord.getTemplate());
+        AttackDefenseTemplates attackDefenseTemplates = templatesMapper.selectOne(templateQueryWrapper);
+
+        return new AttackRecordDetailDTO(attackDefenseRecord,attackDefenseTemplates,targetSystem);
+
+
+    }
+
     //------------攻防记录操作
     
     @Override

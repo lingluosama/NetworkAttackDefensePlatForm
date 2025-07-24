@@ -25,7 +25,7 @@ public class AttackDefenseRecord {
     @Schema(description = "主键ID")
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
-
+    
     /**
      * 标题
      * 对应数据库字段 title
@@ -92,7 +92,7 @@ public class AttackDefenseRecord {
     private String fileName;
 
     /**
-     * 模板类型
+     * 模板类型,通过唯一名称于模板关联
      * 对应数据库字段 template
      */
     @Schema(description = "模板类型")

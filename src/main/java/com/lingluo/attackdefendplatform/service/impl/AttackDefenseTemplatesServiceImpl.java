@@ -1,20 +1,28 @@
 package com.lingluo.attackdefendplatform.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
+import com.lingluo.attackdefendplatform.exception.BusinessException;
 import com.lingluo.attackdefendplatform.mapper.AttackDefenseTemplatesMapper;
 import com.lingluo.attackdefendplatform.model.dto.AttackTemplatePageDTO;
+import com.lingluo.attackdefendplatform.model.entity.AttackDefenseRecord;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseTemplates;
+import com.lingluo.attackdefendplatform.service.AttackDefenseRecordService;
 import com.lingluo.attackdefendplatform.service.AttackDefenseTemplatesService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class AttackDefenseTemplatesServiceImpl extends ServiceImpl<AttackDefenseTemplatesMapper, AttackDefenseTemplates> implements AttackDefenseTemplatesService {
 
+    private final AttackDefenseRecordService recordService;
 
     @Override
     public AttackTemplatePageDTO queryTemplate(Integer offset, Integer limit, String type, String title) throws Throwable {
@@ -40,5 +48,23 @@ public class AttackDefenseTemplatesServiceImpl extends ServiceImpl<AttackDefense
 
         return new AttackTemplatePageDTO((int) count,attackDefenseTemplates);
         
+    }
+
+    @Override
+    public Boolean deleteTemplate(Integer id) throws Throwable {
+        if(id==null){
+            throw  new BusinessException("id不能为空");
+        }
+        AttackDefenseTemplates templates = this.getById(id);
+        
+        //删除记录中对模板的引用
+        LambdaUpdateWrapper<AttackDefenseRecord> updateWrapper=new LambdaUpdateWrapper<>();
+        updateWrapper.set(AttackDefenseRecord::getTemplate,null)
+                .eq(AttackDefenseRecord::getTemplate,templates.getTitle());
+        
+        boolean updatedRecords = recordService.update(updateWrapper);
+
+
+        return this.removeById(id);
     }
 }

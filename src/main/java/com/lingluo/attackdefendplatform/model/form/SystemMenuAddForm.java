@@ -39,4 +39,7 @@ public class SystemMenuAddForm implements Serializable {
 
     @Schema(description = "父菜单ID (根菜单时为null)")
     private Integer parent; // 父菜单ID可以为空，因此不需要 @NotNull 或 @NotBlank
+    
+    @Schema(description = "菜单图标")
+    private String icon;
 }

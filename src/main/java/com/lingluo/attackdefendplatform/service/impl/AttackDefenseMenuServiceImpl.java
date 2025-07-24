@@ -50,6 +50,7 @@ public class AttackDefenseMenuServiceImpl extends ServiceImpl<AttackDefenseMenuM
         dto.setTitle(menuSelf.getTitle());
         dto.setAuth(menuSelf.getAuth());
         dto.setPath(menuSelf.getPath());
+        dto.setIcon(menuSelf.getIcon());
 
         //是否存在子菜单
         List<AttackDefenseMenu> chidrenIdList = this.lambdaQuery()
