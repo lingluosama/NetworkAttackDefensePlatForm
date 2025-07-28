@@ -7,6 +7,7 @@ import com.lingluo.attackdefendplatform.common.result.Result;
 import com.lingluo.attackdefendplatform.exception.BusinessException;
 import com.lingluo.attackdefendplatform.model.bo.MemberInfoBO;
 import com.lingluo.attackdefendplatform.model.dto.AuthorizedDTO;
+import com.lingluo.attackdefendplatform.model.dto.MemberBelongInfoDTO;
 import com.lingluo.attackdefendplatform.model.dto.MemberListInfoDTO;
 import com.lingluo.attackdefendplatform.model.form.AttackTeamMemberForm;
 import com.lingluo.attackdefendplatform.model.query.SystemMemberQuery;
@@ -34,9 +35,8 @@ public class PlatformMemberController {
             @Valid AttackTeamMemberForm form
     ){
         try {
-            String token = attackDefenseMemberService.register(form);
-            AuthorizedDTO authorizedDTO = new AuthorizedDTO(token, form.getRole());
-            return Result.success(authorizedDTO);
+            AuthorizedDTO token = attackDefenseMemberService.register(form);
+            return Result.success(token);
             
         }catch (BusinessException e){
             return Result.failed(e.getMessage());
@@ -65,10 +65,10 @@ public class PlatformMemberController {
     
     @Operation(summary ="根据id拿取用户信息(查看别人的基本信息)" )
     @GetMapping("/info")
-    public Result<MemberInfoBO> getMemberInfo(
+    public Result<MemberBelongInfoDTO> getMemberInfo(
             Integer id
     ){
-        MemberInfoBO memberSimpleInfoById = attackDefenseMemberService.getMemberSimpleInfoById(id);
+        MemberBelongInfoDTO memberSimpleInfoById = attackDefenseMemberService.getMemberSimpleInfoById(id);
         return Result.success(memberSimpleInfoById);
     }
     

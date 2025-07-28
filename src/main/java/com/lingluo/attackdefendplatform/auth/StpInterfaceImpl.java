@@ -67,13 +67,15 @@ public class StpInterfaceImpl implements StpInterface {
                     }
                 }
             } else if (RoleEnum.UMPIRE.getCode().equals(userRoleCode)) {
-                // 如果是裁判，拥有裁判、攻击队员、防守队员的角色
+                // 如果是裁判，拥有裁判、,队长,攻击队员、防守队员的角色
                 if (!roles.contains(RoleEnum.ATTACKER.getCode())) {
-                    roles.add(RoleEnum.ATTACKER.getCode());
                     roles.add(RoleEnum.ATTACKER.getCode());
                 }
                 if (!roles.contains(RoleEnum.DEFENDER.getCode())) {
                     roles.add(RoleEnum.DEFENDER.getCode());
+                }
+                if (!roles.contains(RoleEnum.LEADER.getCode())) {
+                    roles.add(RoleEnum.LEADER.getCode());
                 }
             }
         }

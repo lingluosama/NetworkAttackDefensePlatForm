@@ -23,7 +23,7 @@ public class TargetSystemController {
 
 
 
-    @SaCheckRole("admin")
+    @SaCheckRole("defender")
     @PostMapping("/create")
     Result<Void> createTargetSystem(
             @Valid TargetSystemForm form 
@@ -33,14 +33,14 @@ public class TargetSystemController {
         system.setName(form.getName());
         system.setType(form.getType());
         system.setPort(form.getPort());
-        system.setStatus(form.getStatus());
+        system.setStatus(1);
         system.setDescription(form.getDescription());
         system.setDepartment(form.getDepartment());
         system.setIp(form.getIp());
         system.setContact(form.getContact());
         system.setAccessAccount(form.getAccess_account());
-        system.setPassword(form.getPassword()); // 注意：密码应进行加密处理
-
+        system.setPassword(form.getPassword()); //密码后续应该增加对称加密处理
+        system.setTid(form.getTid());
         boolean saved = targetSystemService.save(system);
 
         if (saved) {
@@ -50,7 +50,7 @@ public class TargetSystemController {
         }
     }
 
-    @SaCheckRole("admin")
+    @SaCheckRole("defender")
     @PutMapping("/update")
     Result<Void> updateTargetSystem(
             @Valid TargetSystemForm form 
@@ -82,7 +82,7 @@ public class TargetSystemController {
         }
     }
     
-    @SaCheckRole("umpire")
+    @SaCheckLogin
     @GetMapping("/query")
     Result<TargetSystemResponseDTO> queryTargetSystem(
             @Valid TargetSystemQuery query

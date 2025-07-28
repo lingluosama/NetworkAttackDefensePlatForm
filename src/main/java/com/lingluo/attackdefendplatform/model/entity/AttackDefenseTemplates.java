@@ -87,4 +87,7 @@ public class AttackDefenseTemplates {
      */
     @Schema(description = "模板文件附件地址")
     private String content;
+    
+    @Schema(description = "是否为攻击模板")
+    private Boolean attack;
 }

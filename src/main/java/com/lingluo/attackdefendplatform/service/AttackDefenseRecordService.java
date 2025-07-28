@@ -15,7 +15,8 @@ public interface AttackDefenseRecordService extends IService<AttackDefenseRecord
             Boolean attack,
             String cn_name,
             String en_name,
-            Integer leader
+            Integer leader,
+            Integer state
     );
     
     Boolean updateTeam(
@@ -46,6 +47,7 @@ public interface AttackDefenseRecordService extends IService<AttackDefenseRecord
     Boolean deleteTeamMember(Integer id);
     
     AttackRecordPageDTO queryRecord(
+            Integer uid,
             Integer offset,
             Integer limit,
             Integer state,

@@ -1,6 +1,7 @@
 package com.lingluo.attackdefendplatform.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,15 +42,15 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
     //---------队伍增删改查
     @Override
     @Transactional
-    public Boolean createTeam(Boolean attack, String cn_name, String en_name, Integer leader) {
+    public Boolean createTeam(Boolean attack, String cn_name, String en_name, Integer leader,Integer state) {
         AttackDefenseTeam attackDefenseTeam = new AttackDefenseTeam();
         attackDefenseTeam.setAttack(attack);
         attackDefenseTeam.setCnName(cn_name);
         attackDefenseTeam.setEnName(en_name);
         attackDefenseTeam.setLeader(leader);
+        attackDefenseTeam.setState(state==null?1:state);
         attackDefenseTeam.setCreateTime(LocalDateTime.now());
         attackDefenseTeam.setMemberNum(0); // 新建队伍成员数量默认为0
-        attackDefenseTeam.setState(1); // 默认状态为活跃
 
         int rows = teamMapper.insert(attackDefenseTeam);
         return rows > 0;
@@ -337,6 +339,7 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
     
     @Override
     public AttackRecordPageDTO queryRecord(
+            Integer uid,
             Integer offset,
             Integer limit,
             Integer state,
@@ -346,9 +349,57 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
             Boolean desc,
             String title,
             String template) {
+        AttackDefenseMember member = memberMapper.selectById(uid);
+        String role = member.getRole();
+        if(role==null||role.isEmpty()){throw new BusinessException("未知的用户等级");}
+        
+        
         QueryWrapper<AttackDefenseRecord> queryWrapper = new QueryWrapper<>();
         
+        //如果是裁判就寻找对应负责裁判是自己的提交记录
+        if(role.equals("umpire")){
+            queryWrapper.eq("umpire",uid);
+        }
         
+        
+        //如果是攻击者就查找自己所在哪些队伍，然后从中筛选此攻击队伍提交的成果报告
+        if(role.equals("attacker")){
+            QueryWrapper<AttackDefenseTeamMembers> teamMembersQueryWrapper = new QueryWrapper<>();
+            teamMembersQueryWrapper.eq("mid",uid);
+            
+            //找出自己所在的队伍
+            List<AttackDefenseTeamMembers> belongTeam = teamMembersMapper.selectList(teamMembersQueryWrapper);
+            List<Integer> tlist = belongTeam.stream().map(AttackDefenseTeamMembers::getTid).toList();
+            //攻击队伍是当前队伍的记录
+            if(!tlist.isEmpty()){
+                queryWrapper.in("attack_team",tlist);
+            }
+            else return null;
+        }
+        
+        //如果是防守者就看是自己队伍下的靶标系统
+        if(role.equals("defender")){
+            QueryWrapper<AttackDefenseTeamMembers> teamMembersQueryWrapper = new QueryWrapper<>();
+            teamMembersQueryWrapper.eq("mid",uid);
+            
+            //找出自己所在的队伍
+            List<AttackDefenseTeamMembers> belongTeam = teamMembersMapper.selectList(teamMembersQueryWrapper);
+            List<Integer> tlist = belongTeam.stream().map(AttackDefenseTeamMembers::getTid).toList();
+            
+            //找出自己队伍发布的靶标系统
+            if(!tlist.isEmpty()) {
+                LambdaQueryWrapper<AttackDefenseTargetSystem> systemLambdaQueryWrapper = new LambdaQueryWrapper<AttackDefenseTargetSystem>()
+                        .select(AttackDefenseTargetSystem::getId)
+                        .in(AttackDefenseTargetSystem::getTid, tlist);
+                List<AttackDefenseTargetSystem> targetSystems = systemMapper.selectList(systemLambdaQueryWrapper);
+                List<Integer> targetSystemList = targetSystems.stream().map(AttackDefenseTargetSystem::getId).toList();
+
+                //目标系统是当前系统的记录
+                if (!targetSystems.isEmpty()) queryWrapper.in("sid", targetSystemList);
+                else return null;
+            }
+
+        }
         
         
         if(state!=null)queryWrapper.eq("state",state);
@@ -405,7 +456,14 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
                 attackRecordInfoBO.setTeamCNName(teamInfo.getCnName());
                 attackRecordInfoBO.setTeamENName(teamInfo.getEnName());
             }
+            //查询靶标系统名
+            QueryWrapper<AttackDefenseTargetSystem> targetSystemQueryWrapper=new QueryWrapper<>();
+            targetSystemQueryWrapper.eq("id",records.getSid());
+            AttackDefenseTargetSystem system = systemMapper.selectOne(targetSystemQueryWrapper);
             
+            if(system!=null)attackRecordInfoBO.setTargetSystem(system.getName());
+
+
             attackRecordInfoBO.setId(records.getId());
             attackRecordInfoBO.setCommit(records.getCommitTime());
             attackRecordInfoBO.setId(records.getId());

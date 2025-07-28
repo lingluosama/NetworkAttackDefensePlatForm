@@ -5,6 +5,7 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.stp.StpUtil;
 import com.lingluo.attackdefendplatform.common.result.Result;
+import com.lingluo.attackdefendplatform.converter.TimeConverter;
 import com.lingluo.attackdefendplatform.exception.BusinessException;
 import com.lingluo.attackdefendplatform.model.dto.AttackRecordPageDTO;
 import com.lingluo.attackdefendplatform.model.dto.AttackTeamPageDTO;
@@ -17,6 +18,7 @@ import com.lingluo.attackdefendplatform.model.form.AttackRecordForm;
 import com.lingluo.attackdefendplatform.model.form.AttackTeamForm;
 import com.lingluo.attackdefendplatform.model.form.AttackTemplateForm;
 import com.lingluo.attackdefendplatform.model.query.AttackRecordQuery;
+import com.lingluo.attackdefendplatform.service.AttackDefenseAuditService;
 import com.lingluo.attackdefendplatform.service.AttackDefenseRecordService;
 import com.lingluo.attackdefendplatform.service.AttackDefenseTargetSystemService;
 import com.lingluo.attackdefendplatform.service.AttackDefenseTemplatesService;
@@ -33,6 +35,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
 
+import static com.lingluo.attackdefendplatform.converter.TimeConverter.parseLocalDateTime;
+
 @Tag(name="网络攻防流程接口")
 @RestController
 @RequestMapping("/api/v1/defense")
@@ -42,13 +46,13 @@ public class AttackDefenseController {
     private final AttackDefenseRecordService recordService;
     private final AttackDefenseTemplatesService templatesService;
     private final AttackDefenseTargetSystemService targetSystemService;
+    private final AttackDefenseAuditService auditService;
     private final MinioOssService minioOssService;
     
     // 时间格式化器
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     //-----------创建接口
-    @SaCheckRole("umpire")
+    @SaCheckRole("attacker")
     @Operation(description = "创建记录")
     @PostMapping("/record/create")
     public Result<Void> createAttackRecord(
@@ -99,6 +103,7 @@ public class AttackDefenseController {
         }
 
         template.setType(form.getType());
+        
         template.setDescription(form.getDescription());
 
         //保证状态非空
@@ -116,6 +121,7 @@ public class AttackDefenseController {
         template.setCreateTime(LocalDateTime.now());
         template.setUpdateTime(LocalDateTime.now()); 
         template.setInUse(form.getIn_use());
+        template.setAttack(form.getAttack());
         template.setUseNum(0); // 新建模板使用次数为0
 
         boolean saved = templatesService.save(template);
@@ -137,7 +143,8 @@ public class AttackDefenseController {
                 form.getAttack(),
                 form.getCn_name(),
                 form.getEn_name(), 
-                form.getLeader()
+                form.getLeader(),
+                form.getState()
         );
 
         if (created == null || !created) {
@@ -287,8 +294,9 @@ public class AttackDefenseController {
         try {
             LocalDateTime begin_time = parseLocalDateTime(query.getBegin_time());
             LocalDateTime end_time = parseLocalDateTime(query.getEnd_time());
-
+            String loginId = StpUtil.getLoginId().toString();
             AttackRecordPageDTO attackRecordPageDTO = recordService.queryRecord(
+                    Integer.valueOf(loginId),
                     query.getOffset(),
                     query.getLimit(),
                     query.getState(),
@@ -307,19 +315,20 @@ public class AttackDefenseController {
     }
     
     @SaCheckLogin
-    @Operation(description = "搜索攻击模板")
+    @Operation(description = "搜索攻防模板")
     @GetMapping("/template/query")
     public Result<AttackTemplatePageDTO> queryTemplate(
             Integer offset,
             Integer limit,
             String type,
-            String title
+            String title,
+            Boolean attack
     ){
         try {
-            AttackTemplatePageDTO attackTemplatePageDTO = templatesService.queryTemplate(offset, limit, type, title);
+            AttackTemplatePageDTO attackTemplatePageDTO = templatesService.queryTemplate(offset, limit, type, title,attack);
             return Result.success(attackTemplatePageDTO);
         }catch (Throwable e){
-            throw new BusinessException("查询攻击模板出现错误",e);
+            throw new BusinessException("查询模板出现错误",e);
         }
     }
     
@@ -342,13 +351,7 @@ public class AttackDefenseController {
         }
         
     }
-    //处理时间转换
-    private LocalDateTime parseLocalDateTime(String timeString) throws DateTimeParseException {
-        if (timeString != null && !timeString.trim().isEmpty()) {
-            return LocalDateTime.parse(timeString, DATE_TIME_FORMATTER);
-        }
-        return null;
-    }
+
     
     @SaCheckLogin
     @Operation(description = "通过id进行统一查询")
@@ -417,6 +420,9 @@ public class AttackDefenseController {
                 }
                 case "targetSystem" ->{
                     removed = targetSystemService.deleteSystem(id);
+                }
+                case "audit"->{
+                    removed = auditService.removeById(id);
                 }
             }
             if (removed == null|| !removed) {

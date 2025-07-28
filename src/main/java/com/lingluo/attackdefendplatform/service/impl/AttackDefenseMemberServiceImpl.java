@@ -1,6 +1,5 @@
 package com.lingluo.attackdefendplatform.service.impl;
 
-import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -8,13 +7,15 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lingluo.attackdefendplatform.common.enums.RoleEnum;
 import com.lingluo.attackdefendplatform.exception.BusinessException;
 import com.lingluo.attackdefendplatform.mapper.AttackDefenseMemberMapper;
+import com.lingluo.attackdefendplatform.mapper.AttackDefenseTeamMapper;
 import com.lingluo.attackdefendplatform.mapper.AttackDefenseTeamMembersMapper;
 import com.lingluo.attackdefendplatform.model.bo.MemberInfoBO;
 import com.lingluo.attackdefendplatform.model.dto.AuthorizedDTO;
 import com.lingluo.attackdefendplatform.model.dto.FileInfo;
+import com.lingluo.attackdefendplatform.model.dto.MemberBelongInfoDTO;
 import com.lingluo.attackdefendplatform.model.dto.MemberListInfoDTO;
-import com.lingluo.attackdefendplatform.model.dto.MenuResponseDTO;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseMember;
+import com.lingluo.attackdefendplatform.model.entity.AttackDefenseTeam;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseTeamMembers;
 import com.lingluo.attackdefendplatform.model.form.AttackTeamMemberForm;
 import com.lingluo.attackdefendplatform.service.AttackDefenseMemberService;
@@ -25,9 +26,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,10 +36,11 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
 
 
     private final PasswordEncryptor passwordEncryptor;
-    private final AttackDefenseTeamMembersMapper attackDefenseTeamMembersMapper;
+    private final AttackDefenseTeamMembersMapper teamMembersMapper;
     private final MinioOssService minioOssService; 
+    private final AttackDefenseTeamMapper teamMapper;
     @Override
-    public String register(AttackTeamMemberForm form) {
+    public AuthorizedDTO register (AttackTeamMemberForm form) {
         AttackDefenseMember member = new AttackDefenseMember();
         
         //电话和密码为登录字段
@@ -77,7 +77,7 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
         StpUtil.login(member.getId());
         
         
-        return StpUtil.getTokenValue();
+        return new AuthorizedDTO(StpUtil.getTokenValue(),member.getRole(),member.getId());
     }
 
     @Override
@@ -108,16 +108,31 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
         StpUtil.login(row.getId());
         String tokenValue = StpUtil.getTokenValue();
         
-        return new AuthorizedDTO(tokenValue,row.getRole());
+        return new AuthorizedDTO(tokenValue,row.getRole(), row.getId());
         
     }
 
     @Override
-    public MemberInfoBO getMemberSimpleInfoById(Integer id) {
+    public MemberBelongInfoDTO getMemberSimpleInfoById(Integer id) {
+        //获取用户信息
         AttackDefenseMember member = this.getById(id);
-        if(member==null){
-            return null;
-        }else return member.toMemberInfoBO();
+        MemberInfoBO memberInfoBO = member.toMemberInfoBO();
+        
+        //获取关联队伍
+        QueryWrapper<AttackDefenseTeamMembers> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("mid",id);
+        
+        List<AttackDefenseTeamMembers> idList = teamMembersMapper.selectList(queryWrapper);
+        //过滤队伍id
+        List<Integer> tids = idList.stream().map(AttackDefenseTeamMembers::getTid).toList();
+        
+        //查询所有关联队伍信息
+        QueryWrapper<AttackDefenseTeam> teamQueryWrapper=new QueryWrapper<>();
+        teamQueryWrapper.in("id",tids);
+        List<AttackDefenseTeam> teams = teamMapper.selectList(teamQueryWrapper);
+        
+        return new MemberBelongInfoDTO(memberInfoBO,teams);
+        
     }
 
     @Override

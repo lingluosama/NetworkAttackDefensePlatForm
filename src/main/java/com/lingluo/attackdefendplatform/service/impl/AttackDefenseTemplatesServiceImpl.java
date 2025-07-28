@@ -25,7 +25,7 @@ public class AttackDefenseTemplatesServiceImpl extends ServiceImpl<AttackDefense
     private final AttackDefenseRecordService recordService;
 
     @Override
-    public AttackTemplatePageDTO queryTemplate(Integer offset, Integer limit, String type, String title) throws Throwable {
+    public AttackTemplatePageDTO queryTemplate(Integer offset, Integer limit, String type, String title,Boolean attack) throws Throwable {
         
         
         QueryWrapper<AttackDefenseTemplates> queryWrapper=new QueryWrapper<>();
@@ -35,6 +35,9 @@ public class AttackDefenseTemplatesServiceImpl extends ServiceImpl<AttackDefense
         }
         if(!title.isEmpty()){
             queryWrapper.like("title",title);
+        }
+        if(attack!=null){
+            queryWrapper.eq("attack",attack);
         }
         //分页查询
         int pageSize = (limit != null && limit > 0) ? limit : 10;

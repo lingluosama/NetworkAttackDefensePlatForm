@@ -45,7 +45,7 @@ public class AttackDefenseTargetSystem implements Serializable {
     private String port;
 
     /**
-     * 状态(1:活跃,2:离线,3:未启用)
+     * 状态(1:未审核,2:已通过,3:已拒绝)
      */
     @TableField("status")
     private Integer status; 
@@ -84,5 +84,13 @@ public class AttackDefenseTargetSystem implements Serializable {
      * 密码 (注意：数据库中为 int 类型，通常密码应存储为哈希后的字符串，建议修改数据库字段类型为 VARCHAR)
      */
     @TableField("password")
-    private String password; 
+    private String password;
+
+    /**
+     * 所属的防御队伍
+     */
+    @TableField("tid")
+    private Integer tid;
+    
+
 }

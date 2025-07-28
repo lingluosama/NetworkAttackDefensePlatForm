@@ -17,4 +17,7 @@ public class AuthorizedDTO {
     String token;
     @Schema( description = "角色")//暂未引入权限组,为方便前端，只返回一个角色，暂由后端处理权限继承问题
     String role;
+    @Schema(description = "id")
+    Integer id;
+
 }

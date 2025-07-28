@@ -48,6 +48,8 @@ public class AttackRecordInfoBO {
     @ExcelProperty(value = "队伍英文名")
     private String teamENName;
     
+    @ExcelProperty(value = "靶标系统名称")
+    private String targetSystem;
     
     /**
      * 演习状态 (1:等待开始; 2:处置中; 3:已完成)

@@ -81,4 +81,8 @@ public class TargetSystemForm implements Serializable {
      */
     @Schema(description = "密码")
     private String password;
+    @Schema(description = "队伍id")
+    private Integer tid;
+    @Schema(description = "是否启用为攻击目标")
+    private Boolean in_use;
 }

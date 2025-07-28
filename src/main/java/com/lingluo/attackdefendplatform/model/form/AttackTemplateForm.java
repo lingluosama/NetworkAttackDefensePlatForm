@@ -29,7 +29,9 @@ public class AttackTemplateForm implements Serializable {
     
     @Schema(description = "是否启用")
     private Boolean in_use;
-
+    
+    @Schema(description = "是否为攻击模板")
+    private Boolean attack;
     @Schema(description = "模板描述")
     private String description;
 
