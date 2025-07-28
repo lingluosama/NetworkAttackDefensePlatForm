@@ -78,18 +78,18 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
         if (id == null) {
             throw new BusinessException("未传入id");
         }
-        QueryWrapper<AttackDefenseMember> wrapper=new QueryWrapper<AttackDefenseMember>();
+        QueryWrapper<AttackDefenseTeamMembers> wrapper=new QueryWrapper<AttackDefenseTeamMembers>();
         wrapper.eq("tid",id);
-
-        int deleted = memberMapper.delete(wrapper);
+            
+        int deleted = teamMembersMapper.delete(wrapper);
 
         //先删除所有成员
         AttackDefenseTeam attackDefenseTeam = teamMapper.selectById(id);
         if(attackDefenseTeam.getMemberNum()!=deleted){
             throw new BusinessException("队伍成员数量错误，删除未执行");
-            
+
         }
-        // 删除自己
+//         删除自己
         int rows = teamMapper.deleteById(id);
         return rows > 0;
     }
