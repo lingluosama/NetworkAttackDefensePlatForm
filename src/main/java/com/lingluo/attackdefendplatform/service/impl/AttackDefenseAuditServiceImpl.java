@@ -7,14 +7,15 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lingluo.attackdefendplatform.converter.TimeConverter;
 import com.lingluo.attackdefendplatform.exception.BusinessException;
 import com.lingluo.attackdefendplatform.mapper.AttackDefenseAuditMapper;
+import com.lingluo.attackdefendplatform.mapper.AttackDefenseTeamMapper;
+import com.lingluo.attackdefendplatform.model.bo.AuditInfoBO;
 import com.lingluo.attackdefendplatform.model.dto.AuditListDTO;
-import com.lingluo.attackdefendplatform.model.entity.AttackDefenseAudit;
-import com.lingluo.attackdefendplatform.model.entity.AttackDefenseMember;
-import com.lingluo.attackdefendplatform.model.entity.AttackDefenseRecord;
+import com.lingluo.attackdefendplatform.model.entity.*;
 import com.lingluo.attackdefendplatform.model.query.AuditQuery;
 import com.lingluo.attackdefendplatform.service.AttackDefenseAuditService;
 import com.lingluo.attackdefendplatform.service.AttackDefenseMemberService;
 import com.lingluo.attackdefendplatform.service.AttackDefenseRecordService;
+import com.lingluo.attackdefendplatform.service.AttackDefenseTargetSystemService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +31,11 @@ public class AttackDefenseAuditServiceImpl extends ServiceImpl<AttackDefenseAudi
     private final AttackDefenseRecordService recordService; 
    
     private final AttackDefenseMemberService memberService;
+    
+    private final AttackDefenseTargetSystemService systemService;
+    
+    private  final AttackDefenseTeamMapper teamMapper;
+    
     @Override
     public AuditListDTO queryAudit(AuditQuery query) {
         LocalDateTime min_time = null;
@@ -80,6 +86,8 @@ public class AttackDefenseAuditServiceImpl extends ServiceImpl<AttackDefenseAudi
         } else if (max_time != null) {
             queryWrapper.le("create_time", max_time);
         }
+        
+        queryWrapper.orderByDesc("create_time");
 
         int pageSize = (query.getLimit() != null && query.getLimit() > 0) ? query.getLimit() : 10;
         int currentPage = query.getOffset() + 1;
@@ -89,9 +97,33 @@ public class AttackDefenseAuditServiceImpl extends ServiceImpl<AttackDefenseAudi
 
         AuditListDTO dto = new AuditListDTO();
         dto.setMount((int) mount);
-        dto.setList(defenseAuditPage.getRecords());
+        
+        //获取靶标系统和队伍名称
+        List<AuditInfoBO> auditInfoBOS = defenseAuditPage.getRecords().stream().map(audit -> {
+
+            AuditInfoBO infoBO = new AuditInfoBO();
+            infoBO.setAudit(audit);
+
+            AttackDefenseRecord attackDefenseRecord = recordService.getById(audit.getRid());
 
 
+            //获取靶标系统相关信息
+            AttackDefenseTargetSystem targetSystem = systemService.getById(attackDefenseRecord.getSid());
+            infoBO.setSid(targetSystem.getId());
+            infoBO.setSystemName(targetSystem.getName());
+            infoBO.setIp(targetSystem.getIp());
+
+            //获取队伍相关信息
+            QueryWrapper<AttackDefenseTeam> teamQueryWrapper = new QueryWrapper<>();
+            teamQueryWrapper.eq("id", targetSystem.getTid());
+            infoBO.setTeam(teamMapper.selectOne(teamQueryWrapper));
+
+
+            return infoBO;
+
+        }).toList();
+        dto.setList(auditInfoBOS);
+    
         return dto;
     }
 

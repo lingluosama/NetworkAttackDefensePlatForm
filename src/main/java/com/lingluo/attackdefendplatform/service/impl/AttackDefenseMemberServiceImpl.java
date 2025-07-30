@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -128,10 +129,12 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
         
         //查询所有关联队伍信息
         QueryWrapper<AttackDefenseTeam> teamQueryWrapper=new QueryWrapper<>();
-        teamQueryWrapper.in("id",tids);
-        List<AttackDefenseTeam> teams = teamMapper.selectList(teamQueryWrapper);
-        
-        return new MemberBelongInfoDTO(memberInfoBO,teams);
+        if(!tids.isEmpty()) {
+            teamQueryWrapper.in("id", tids);
+            List<AttackDefenseTeam> teams = teamMapper.selectList(teamQueryWrapper);
+
+            return new MemberBelongInfoDTO(memberInfoBO, teams);
+        }else return new MemberBelongInfoDTO(memberInfoBO, Collections.emptyList());
         
     }
 

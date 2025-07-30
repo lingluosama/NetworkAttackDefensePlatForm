@@ -170,8 +170,31 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
 
     
     @Override
-    public AttackDefenseMember getMemberById(Integer id) {
-        return memberMapper.selectById(id);
+    public  MemberAllBelongInfoDTO getMemberById(Integer id) {
+        AttackDefenseMember memberInfo = memberMapper.selectById(id);
+        
+        //查询所在队伍列表
+        QueryWrapper<AttackDefenseTeamMembers> teamMembersQueryWrapper = new QueryWrapper<>();
+        teamMembersQueryWrapper.eq("mid",id);
+        List<AttackDefenseTeamMembers> teamMembers = teamMembersMapper.selectList(teamMembersQueryWrapper);
+        List<Integer> tids = teamMembers.stream().map(AttackDefenseTeamMembers::getTid).toList();
+
+        MemberAllBelongInfoDTO infoDTO = new MemberAllBelongInfoDTO();
+        
+        QueryWrapper<AttackDefenseTeam> teamQueryWrapper = new QueryWrapper<>();
+        teamQueryWrapper.in("id",tids);
+        if(!tids.isEmpty()){
+            List<AttackDefenseTeam> teams = teamMapper.selectList(teamQueryWrapper);
+            infoDTO.setTeamList(teams);
+        }else{
+            infoDTO.setTeamList(Collections.EMPTY_LIST);
+        }
+
+        
+        infoDTO.setMemberInfo(memberInfo);
+        
+        return infoDTO;
+
     }
     
 
@@ -333,6 +356,28 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
         return new AttackRecordDetailDTO(attackDefenseRecord,attackDefenseTemplates,targetSystem);
 
 
+    }
+
+    @Override
+    public Boolean updateTeamInfo(Integer id,String cn_name, String en_name, Integer leader, Integer state) {
+        AttackDefenseTeam team = teamMapper.selectById(id);
+        if(team==null){
+            throw new BusinessException("未找到该队伍");
+        }
+        if (cn_name != null && !cn_name.isEmpty()) {
+            team.setCnName(cn_name);
+        }
+        if(en_name != null && !en_name.isEmpty()) {
+            team.setEnName(en_name);
+        }
+        if(leader != null){
+            team.setLeader(leader);
+        }
+        if(state != null){
+            team.setState(state);
+        }
+        int updated = teamMapper.updateById(team);
+        return updated>0;
     }
 
     //------------攻防记录操作

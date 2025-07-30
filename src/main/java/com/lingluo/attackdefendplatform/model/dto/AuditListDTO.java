@@ -1,6 +1,7 @@
 package com.lingluo.attackdefendplatform.model.dto;
 
 import com.alibaba.excel.annotation.write.style.ColumnWidth;
+import com.lingluo.attackdefendplatform.model.bo.AuditInfoBO;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseAudit;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -18,6 +19,6 @@ import java.util.List;
 public class AuditListDTO {
     Integer  mount;
     
-    List<AttackDefenseAudit> list;
+    List<AuditInfoBO> list;
     
 }

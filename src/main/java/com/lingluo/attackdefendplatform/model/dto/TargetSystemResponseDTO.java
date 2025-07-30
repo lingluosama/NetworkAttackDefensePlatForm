@@ -1,6 +1,7 @@
 package com.lingluo.attackdefendplatform.model.dto;
 
 
+import com.lingluo.attackdefendplatform.model.bo.TargetSystemInfoBO;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseTargetSystem;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -23,6 +24,6 @@ public class TargetSystemResponseDTO {
     Integer mount;
     
     @Schema(description = "靶标系统信息列表")
-    List<AttackDefenseTargetSystem> list;
+    List<TargetSystemInfoBO> list;
     
 }

@@ -68,10 +68,18 @@ public interface AttackDefenseRecordService extends IService<AttackDefenseRecord
     );
     
     //根据id获取队伍和队员详情
-    AttackDefenseMember getMemberById(Integer id);
+    MemberAllBelongInfoDTO getMemberById(Integer id);
     TeamMemberDTO getTeamById(Integer id);
 
     AttackRecordDetailDTO getDetailById(Integer id);
+    
+    Boolean updateTeamInfo(
+            Integer id,
+            String cn_name,
+            String en_name,
+            Integer leader,
+            Integer state
+    );
     
     
 }

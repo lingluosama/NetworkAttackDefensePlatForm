@@ -7,10 +7,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.lingluo.attackdefendplatform.common.result.Result;
 import com.lingluo.attackdefendplatform.converter.TimeConverter;
 import com.lingluo.attackdefendplatform.exception.BusinessException;
-import com.lingluo.attackdefendplatform.model.dto.AttackRecordPageDTO;
-import com.lingluo.attackdefendplatform.model.dto.AttackTeamPageDTO;
-import com.lingluo.attackdefendplatform.model.dto.AttackTemplatePageDTO;
-import com.lingluo.attackdefendplatform.model.dto.FileInfo;
+import com.lingluo.attackdefendplatform.model.dto.*;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseMember;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseRecord;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseTemplates;
@@ -85,7 +82,7 @@ public class AttackDefenseController {
         return Result.success();
     }
 
-    @SaCheckRole("admin")
+    @SaCheckRole("umpire")
     @Operation(summary = "新建攻防模板")
     @PostMapping(value = "/template/create")
     public Result<Void> createAttackTemplate(
@@ -240,7 +237,7 @@ public class AttackDefenseController {
         return Result.success(); 
     }
 
-    @SaCheckRole("admin")
+    @SaCheckRole("umpire")
     @Operation(summary = "更新攻防模板信息")
     @PutMapping(value = "/template/update", consumes = "multipart/form-data") // 声明接收 multipart/form-data
     public Result<Void> updateAttackTemplate(
@@ -351,7 +348,30 @@ public class AttackDefenseController {
         }
         
     }
+    
+    @SaCheckLogin
+    @Operation(description = "更新队伍")
+    @PutMapping("/team/update")
+    public Result<Void> updateTeam(
+            Integer id,
+            String cn_name,
+            String en_name,
+            Integer leader,
+            Integer state
+    ){
+        try {
+            Boolean updated = recordService.updateTeamInfo(id,cn_name, en_name, leader, state);
+            if(updated)return Result.success();
+            return Result.failed();
+        }catch (BusinessException e){
+            return Result.failed(e.getMessage());
+        }catch (Exception e){
+            throw  e;
+        }
 
+    }
+    
+    
     
     @SaCheckLogin
     @Operation(description = "通过id进行统一查询")
@@ -361,7 +381,7 @@ public class AttackDefenseController {
         //什么都不传就返回自己的信息
         if (id == null || target == null || target.isEmpty()) {
             String loginId = (String) StpUtil.getLoginId();
-            AttackDefenseMember self = recordService.getMemberById(Integer.valueOf(loginId));
+            MemberAllBelongInfoDTO self = recordService.getMemberById(Integer.valueOf(loginId));
             return Result.success(self);
         }
         try {   

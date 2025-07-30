@@ -8,7 +8,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lingluo.attackdefendplatform.exception.BusinessException;
 import com.lingluo.attackdefendplatform.mapper.AttackDefenseTargetSystemMapper;
+import com.lingluo.attackdefendplatform.mapper.AttackDefenseTeamMapper;
 import com.lingluo.attackdefendplatform.mapper.AttackDefenseTeamMembersMapper;
+import com.lingluo.attackdefendplatform.model.bo.AttackTeamInfoBO;
+import com.lingluo.attackdefendplatform.model.bo.TargetSystemInfoBO;
 import com.lingluo.attackdefendplatform.model.dto.TargetSystemResponseDTO;
 import com.lingluo.attackdefendplatform.model.entity.*;
 import com.lingluo.attackdefendplatform.model.query.TargetSystemQuery;
@@ -29,6 +32,7 @@ public class AttackDefenseTargetSystemImpl extends ServiceImpl<AttackDefenseTarg
     private final AttackDefenseRecordService recordService;
     private final AttackDefenseMemberService memberService;
     private final AttackDefenseTeamMembersMapper teamMembersMapper;
+    private  final AttackDefenseTeamMapper teamMapper;
     
     
     @Override
@@ -77,7 +81,31 @@ public class AttackDefenseTargetSystemImpl extends ServiceImpl<AttackDefenseTarg
         
         TargetSystemResponseDTO responseDTO = new TargetSystemResponseDTO();
         responseDTO.setMount((int) count);
-        responseDTO.setList(targetSystemPage.getRecords());
+        List<TargetSystemInfoBO> infoBOS = targetSystemPage.getRecords().stream().map(system -> {
+            TargetSystemInfoBO infoBO = new TargetSystemInfoBO();
+            infoBO.setTargetSystem(system);
+
+            // 获取联络人相关信息
+            AttackDefenseMember contactor = memberService.getById(system.getContact());
+            infoBO.setContactor(contactor);
+
+            //获取发布靶标的队伍
+            QueryWrapper<AttackDefenseTeam> teamQueryWrapper = new QueryWrapper<>();
+            teamQueryWrapper.eq("id", system.getTid());
+            AttackDefenseTeam defenseTeam = teamMapper.selectOne(teamQueryWrapper);
+            AttackTeamInfoBO teamInfoBO = new AttackTeamInfoBO();
+            teamInfoBO.setTeamInfo(defenseTeam);
+            //获取队伍的队长信息
+            if(defenseTeam!=null&&defenseTeam.getLeader()!=null){
+                AttackDefenseMember leader = memberService.getById(defenseTeam.getLeader());
+                teamInfoBO.setLeaderInfo(leader.toMemberInfoBO());
+            }
+
+            infoBO.setDefenseTeam(teamInfoBO);
+            return infoBO;
+        }).toList();
+        
+        responseDTO.setList(infoBOS);
 
 
         return responseDTO;
