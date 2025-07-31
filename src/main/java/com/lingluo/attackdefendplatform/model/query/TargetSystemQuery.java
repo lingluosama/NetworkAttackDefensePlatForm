@@ -25,8 +25,8 @@ public class TargetSystemQuery extends BasePageQuery implements Serializable {
     @Schema(description = "关键词 (支持系统名、部门模糊查询)")
     private String keyword;
 
-    @Schema(description = "ip地址")
-    String ip;
+    @Schema(description = "系统类型筛选")
+    String type;
 
     @Schema(description = "状态(1:活跃,2:离线,3:未启用)")
     Integer status;

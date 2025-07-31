@@ -50,9 +50,17 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
         attackDefenseTeam.setLeader(leader);
         attackDefenseTeam.setState(state==null?1:state);
         attackDefenseTeam.setCreateTime(LocalDateTime.now());
-        attackDefenseTeam.setMemberNum(0); // 新建队伍成员数量默认为0
+        attackDefenseTeam.setMemberNum(1); // 新建队伍成员数量默认为1
 
         int rows = teamMapper.insert(attackDefenseTeam);
+
+        
+        //将队长立即添加到队伍中
+        AttackDefenseTeamMembers teamMembers = new AttackDefenseTeamMembers();
+        teamMembers.setMid(leader);
+        teamMembers.setTid(attackDefenseTeam.getId());
+        teamMembersMapper.insert(teamMembers);
+        
         return rows > 0;
     }
 

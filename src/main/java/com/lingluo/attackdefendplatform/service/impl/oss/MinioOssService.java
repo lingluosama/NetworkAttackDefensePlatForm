@@ -127,7 +127,7 @@ public class MinioOssService implements OssService {
             if (save) fileInfo.setId(uploads.getId());
             return fileInfo;
         } catch (Exception e) {
-            throw new RuntimeException("文件上传失败");
+            throw new RuntimeException("文件上传失败"+e.getMessage());
         }
     }
 

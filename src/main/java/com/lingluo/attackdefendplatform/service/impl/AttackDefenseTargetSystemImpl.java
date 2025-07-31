@@ -59,7 +59,7 @@ public class AttackDefenseTargetSystemImpl extends ServiceImpl<AttackDefenseTarg
         }   
         
 
-        if(query.getIp()!=null && !query.getIp().isEmpty()){queryWrapper.eq("ip",query.getIp());}
+        if(query.getType()!=null && !query.getType().isEmpty()){queryWrapper.eq("type",query.getType());}
         
         log.warn(String.valueOf(query.getStatus()));
         Optional.ofNullable(query.getStatus()).ifPresent(status->queryWrapper.eq("status",status));

@@ -1,0 +1,29 @@
+version: '3.8' 
+services:
+  back:
+    image: atk_def_form:dev
+    container_name: back_side
+    ports:
+      - "8990:8990"
+    depends_on:
+      - cache
+      - db
+    environment:
+      SPRING_REDIS_HOST: cache
+      SPRING_REDIS_PORT: 6379
+  cache:
+    image: redis:latest 
+    container_name: redis_cache 
+    ports:
+      - "6379:6379"
+
+  db: 
+    image: mysql:8.0 
+    container_name: mysql_db
+    environment:
+      MYSQL_ROOT_PASSWORD: atk_def_form@hook 
+      MYSQL_DATABASE: master                  
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./db_init:/docker-entrypoint-initdb.d
