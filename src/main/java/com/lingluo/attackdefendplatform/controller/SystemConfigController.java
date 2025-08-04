@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.lingluo.attackdefendplatform.common.result.Result;
 import com.lingluo.attackdefendplatform.exception.BusinessException;
 import com.lingluo.attackdefendplatform.model.dto.MenuResponseDTO;
+import com.lingluo.attackdefendplatform.model.dto.ScreenDataDTO;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseMenu;
 import com.lingluo.attackdefendplatform.model.form.SystemMenuAddForm;
 import com.lingluo.attackdefendplatform.service.AttackDefenseMenuService;
@@ -81,6 +82,7 @@ public class SystemConfigController {
             throw  e;
         }
     }
+    
     @Operation(description = "查询菜单列表")
     @SaCheckRole("admin")
     @GetMapping("/menu/query")
@@ -89,5 +91,21 @@ public class SystemConfigController {
         queryWrapper.eq("auth",role);
         return Result.success(menuService.list(queryWrapper));
     }
+        
+    @Operation(description = "大屏数据")
+    @SaCheckRole("admin")
+    @GetMapping( "/screen/{sid}")
+    public Result<ScreenDataDTO> getScreenData(@PathVariable Integer sid){
+        try {
+            ScreenDataDTO dto = menuService.getScreenData(sid);
+            return Result.success(dto);
+        }catch (BusinessException e){
+            return Result.failed(e.getMessage());
+        }catch (Exception e){
+            throw  e;
+        }
+    }
+    
+    
     
 }

@@ -2,6 +2,7 @@ package com.lingluo.attackdefendplatform.service;
 
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.lingluo.attackdefendplatform.model.dto.TargetSystemDetailDTO;
 import com.lingluo.attackdefendplatform.model.dto.TargetSystemResponseDTO;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseTargetSystem;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseTemplates;
@@ -12,5 +13,9 @@ public interface AttackDefenseTargetSystemService extends IService<AttackDefense
     TargetSystemResponseDTO querySystem(TargetSystemQuery query);
     
     Boolean deleteSystem(Integer id);
+    
+    Boolean handleTeamSystemAuth(Integer tid,Integer sid,Boolean delete);
+    
+    TargetSystemDetailDTO getDetailById(Integer id);
 
 }   

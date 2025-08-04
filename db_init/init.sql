@@ -155,7 +155,7 @@ create table attack_defense_templates
     use_num     int         null comment '使用次数',
     in_use      tinyint     null comment '使用状态',
     description text        null comment '模板描述',
-    content     text        null comment '模板文件附件地址',
+    content     text        null comment '模板文件附件附件地址',
     attack      tinyint(1)  null comment '是否为攻击模板',
     constraint attack_defense_templates_pk
         unique (title)
@@ -163,6 +163,16 @@ create table attack_defense_templates
 
 create index attack_defense_templates_id_title_update_time_index
     on attack_defense_templates (id, title, update_time);
+
+create table attack_defense_target_team
+(
+    tid int not null comment '队伍id',
+    sid int not null comment '靶标系统id',
+    primary key (tid, sid)
+)
+    comment '靶标指定的可攻击队伍表';
+
+
 
 # 继承自原先系统的上传记录表
 create table uploads
@@ -177,8 +187,9 @@ create table uploads
     comment '文件url表' row_format = DYNAMIC;
 
 
+-- 第一个注册的人为admin
+DELIMITER //
 
-# 第一个注册的人为admin
 CREATE TRIGGER set_first_user_as_admin
     BEFORE INSERT ON attack_defense_member
     FOR EACH ROW
@@ -190,5 +201,6 @@ BEGIN
     IF member_count = 0 THEN
         SET NEW.role = 'admin';
     END IF;
-END;
+END //
 
+DELIMITER ;

@@ -7,6 +7,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.lingluo.attackdefendplatform.common.result.Result;
 import com.lingluo.attackdefendplatform.converter.TimeConverter;
 import com.lingluo.attackdefendplatform.exception.BusinessException;
+import com.lingluo.attackdefendplatform.exception.SystemErrorType;
 import com.lingluo.attackdefendplatform.model.dto.*;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseMember;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseRecord;
@@ -30,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.Optional;
 
 import static com.lingluo.attackdefendplatform.converter.TimeConverter.parseLocalDateTime;
@@ -189,52 +191,22 @@ public class AttackDefenseController {
     
 
     //--------更新接口
-    @SaCheckRole("umpire")
+    @SaCheckRole("attacker")
     @Operation(summary = "更新攻防审批记录(进行审批)")
     @PutMapping(value = "/record/update", consumes = "multipart/form-data") // 声明接收 multipart/form-data
     public Result<Void> updateAttackRecord(
             @Valid AttackRecordForm form
     ) {
-        if (form.getId() == null) {
-            throw new BusinessException("更新攻防记录失败：记录ID不能为空。");
+
+        try {
+            Boolean b = recordService.updateRecord(form);
+            if(b)return Result.success();
+            return  Result.failed("更新失败");
+        }catch (BusinessException e){
+            return Result.failed(e.getMessage());
+        }catch (Exception e){
+            throw  e;
         }
-
-        AttackDefenseRecord defenseRecord = new AttackDefenseRecord();
-        defenseRecord.setId(form.getId()); 
-
-        MultipartFile file = form.getFile();
-        if (file != null && !file.isEmpty()) {
-            try {
-                FileInfo fileInfo = minioOssService.uploadFile(file);
-                defenseRecord.setFile(fileInfo.getUrl()); // 更新文件 URL
-                 defenseRecord.setFileName(fileInfo.getName());
-            } catch (Exception e) {
-                throw new BusinessException("文件附件上传失败：" + e.getMessage(), e);
-            }
-        }
-
-        // Optional.ofNullable检查非空再更新
-        Optional.ofNullable(form.getTitle()).ifPresent(defenseRecord::setTitle);
-        Optional.ofNullable(form.getAttack_team()).ifPresent(defenseRecord::setAttackTeam);
-        Optional.ofNullable(form.getDefend_team()).ifPresent(defenseRecord::setDefendTeam);
-        Optional.ofNullable(form.getSid()).ifPresent(defenseRecord::setSid);
-        Optional.ofNullable(form.getState()).ifPresent(defenseRecord::setState);
-        Optional.ofNullable(form.getSummary()).ifPresent(defenseRecord::setSummary);
-        Optional.ofNullable(form.getTemplate()).ifPresent(defenseRecord::setTemplate);
-        Optional.ofNullable(form.getUmpire()).ifPresent(defenseRecord::setUmpire);
-        
-//        //变为待审批状态时更新提交时间
-//        Optional.ofNullable(form.getState()).ifPresent(value->{
-//            if(value==2)defenseRecord.setCommitTime(LocalDateTime.now());
-//        });
-//        
-        boolean updated = recordService.updateById(defenseRecord);
-
-        if (!updated) {
-            throw new BusinessException("更新攻防记录失败，记录ID (ID: " + form.getId() + ") 可能不存在或数据未能成功保存。");
-        }
-
-        return Result.success(); 
     }
 
     @SaCheckRole("umpire")
@@ -401,8 +373,7 @@ public class AttackDefenseController {
                     resultObject = templatesService.getById(id);
                 }
                 case "targetSystem" -> {
-                    StpUtil.checkRole("umpire");//裁判以上才能查询靶标系统详情
-                    resultObject = targetSystemService.getById(id);
+                    resultObject = targetSystemService.getDetailById(id);
                 }
             }
             if (resultObject == null) {

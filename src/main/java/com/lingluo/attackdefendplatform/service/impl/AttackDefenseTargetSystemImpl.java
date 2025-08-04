@@ -8,10 +8,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lingluo.attackdefendplatform.exception.BusinessException;
 import com.lingluo.attackdefendplatform.mapper.AttackDefenseTargetSystemMapper;
+import com.lingluo.attackdefendplatform.mapper.AttackDefenseTargetTeamMapper;
 import com.lingluo.attackdefendplatform.mapper.AttackDefenseTeamMapper;
 import com.lingluo.attackdefendplatform.mapper.AttackDefenseTeamMembersMapper;
 import com.lingluo.attackdefendplatform.model.bo.AttackTeamInfoBO;
 import com.lingluo.attackdefendplatform.model.bo.TargetSystemInfoBO;
+import com.lingluo.attackdefendplatform.model.dto.TargetSystemDetailDTO;
 import com.lingluo.attackdefendplatform.model.dto.TargetSystemResponseDTO;
 import com.lingluo.attackdefendplatform.model.entity.*;
 import com.lingluo.attackdefendplatform.model.query.TargetSystemQuery;
@@ -22,6 +24,7 @@ import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,7 +36,7 @@ public class AttackDefenseTargetSystemImpl extends ServiceImpl<AttackDefenseTarg
     private final AttackDefenseMemberService memberService;
     private final AttackDefenseTeamMembersMapper teamMembersMapper;
     private  final AttackDefenseTeamMapper teamMapper;
-    
+    private final AttackDefenseTargetTeamMapper targetTeamMapper;
     
     @Override
     public TargetSystemResponseDTO querySystem(TargetSystemQuery query) {
@@ -44,19 +47,37 @@ public class AttackDefenseTargetSystemImpl extends ServiceImpl<AttackDefenseTarg
         AttackDefenseMember member = memberService.getById(Integer.parseInt(loginId));
         if(member==null){throw  new BusinessException("未知的权限等级");}
 
+        
+        //防守方只能看自己队伍发布的靶标
         if(member.getRole().equals("defender")){
             
             //获取所在队伍id
-            LambdaQueryWrapper<AttackDefenseTeamMembers> teamMembersLambdaQueryWrapper=new LambdaQueryWrapper<AttackDefenseTeamMembers>()
-                    .select(AttackDefenseTeamMembers::getTid)
-                    .eq(AttackDefenseTeamMembers::getMid,member.getId());
-            List<AttackDefenseTeamMembers> ids = teamMembersMapper.selectList(teamMembersLambdaQueryWrapper);
-            List<Integer> tids = ids.stream().map(AttackDefenseTeamMembers::getTid).toList();
+            List<Integer> tids = getUserTeamIds(member.getId());
             
-            //只能查看自己所在队伍的靶标系统
-            if(!tids.isEmpty())queryWrapper.in("tid",tids);
-            else return null;
-        }   
+            if(!tids.isEmpty()){
+                queryWrapper.in("tid",tids);
+            }
+            else return new TargetSystemResponseDTO();
+            
+        }
+        
+        //如果是攻方要先筛选授权的系统
+        if(member.getRole().equals("attacker")){
+            //获取所在队伍id
+            List<Integer> tids = getUserTeamIds(member.getId());
+                
+            if(!tids.isEmpty()){
+                LambdaQueryWrapper<AttackDefenseTargetTeam> targetTeamLambdaQueryWrapper = new LambdaQueryWrapper<AttackDefenseTargetTeam>()
+                        .select(AttackDefenseTargetTeam::getSid)
+                        .in(AttackDefenseTargetTeam::getTid,tids);
+                List<Integer> systemIds = targetTeamMapper.selectList(targetTeamLambdaQueryWrapper).stream().map(AttackDefenseTargetTeam::getSid).toList();
+
+                //在已经授权的系统里筛选
+                if(!systemIds.isEmpty())queryWrapper.in("id",systemIds);
+                else return new TargetSystemResponseDTO();
+            }else return new TargetSystemResponseDTO();
+            
+        }
         
 
         if(query.getType()!=null && !query.getType().isEmpty()){queryWrapper.eq("type",query.getType());}
@@ -122,4 +143,68 @@ public class AttackDefenseTargetSystemImpl extends ServiceImpl<AttackDefenseTarg
         
         return this.removeById(id);
     }
+
+    @Override
+    public Boolean handleTeamSystemAuth(Integer tid, Integer sid, Boolean delete) {
+        
+        //先查是否存在
+        QueryWrapper<AttackDefenseTargetTeam> targetTeamQueryWrapper = new QueryWrapper<>();
+        targetTeamQueryWrapper.eq("sid",sid);
+        targetTeamQueryWrapper.eq("tid",tid);
+        boolean exist = targetTeamMapper.exists(targetTeamQueryWrapper);
+        
+        
+        if(!delete){
+            if(exist){
+                throw new BusinessException("相同记录已存在");
+            }
+            AttackDefenseTargetTeam targetTeam = new AttackDefenseTargetTeam(tid,sid);
+            return targetTeamMapper.insert(targetTeam)>0;
+        }else{
+            if(!exist){
+                throw new BusinessException("记录不存在?");
+            }
+            return targetTeamMapper.delete(targetTeamQueryWrapper)>0;
+        }
+        
+    }
+
+    @Override
+    public TargetSystemDetailDTO getDetailById(Integer id) {
+        TargetSystemDetailDTO dto = new TargetSystemDetailDTO();
+        
+        AttackDefenseTargetSystem targetSystem = this.getById(id);
+        if(targetSystem==null){
+            throw  new BusinessException("靶标不存在");
+        }
+        dto.setTargetSystem(targetSystem);
+
+        //找授权的队伍
+        QueryWrapper<AttackDefenseTargetTeam> targetTeamQueryWrapper = new QueryWrapper<>();
+        targetTeamQueryWrapper.eq("sid",id);
+        List<AttackDefenseTargetTeam> targetTeams = targetTeamMapper.selectList(targetTeamQueryWrapper);
+        List<Integer> tids = targetTeams.stream().map(AttackDefenseTargetTeam::getTid).toList();
+        
+        if(tids.isEmpty()){
+            dto.setTeamList(Collections.emptyList());    
+        }else{
+            QueryWrapper<AttackDefenseTeam> teamQueryWrapper = new QueryWrapper<>();
+            teamQueryWrapper.in("id",tids);
+            List<AttackDefenseTeam> teams = teamMapper.selectList(teamQueryWrapper);
+            dto.setTeamList(teams);
+        }
+
+        return dto;
+    }
+
+    //获取所在队伍id
+    private List<Integer> getUserTeamIds(Integer id){
+        LambdaQueryWrapper<AttackDefenseTeamMembers> teamMembersLambdaQueryWrapper=new LambdaQueryWrapper<AttackDefenseTeamMembers>()
+                .select(AttackDefenseTeamMembers::getTid)
+                .eq(AttackDefenseTeamMembers::getMid,id);
+        List<AttackDefenseTeamMembers> ids = teamMembersMapper.selectList(teamMembersLambdaQueryWrapper);
+        return ids.stream().map(AttackDefenseTeamMembers::getTid).toList();
+    }
+    
+    
 }

@@ -6,6 +6,7 @@ import com.lingluo.attackdefendplatform.model.dto.*;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseMember;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseRecord;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseTeam;
+import com.lingluo.attackdefendplatform.model.form.AttackRecordForm;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
@@ -80,6 +81,8 @@ public interface AttackDefenseRecordService extends IService<AttackDefenseRecord
             Integer leader,
             Integer state
     );
+    
+    Boolean updateRecord(AttackRecordForm form); 
     
     
 }

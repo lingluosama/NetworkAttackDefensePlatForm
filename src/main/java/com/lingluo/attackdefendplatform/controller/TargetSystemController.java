@@ -4,6 +4,7 @@ package com.lingluo.attackdefendplatform.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckRole;
 import com.lingluo.attackdefendplatform.common.result.Result;
+import com.lingluo.attackdefendplatform.exception.BusinessException;
 import com.lingluo.attackdefendplatform.model.dto.TargetSystemResponseDTO;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseTargetSystem;
 import com.lingluo.attackdefendplatform.model.form.TargetSystemForm;
@@ -89,6 +90,24 @@ public class TargetSystemController {
     ){
         TargetSystemResponseDTO targetSystemResponseDTO = targetSystemService.querySystem(query);
         return Result.success(targetSystemResponseDTO);
+    }
+    
+    @SaCheckRole("defender")
+    @PostMapping("/team")
+    Result<Void> handleTeamAttackAuth(
+            Integer tid,
+            Integer sid,
+            Boolean delete
+    ){
+        try {
+            Boolean b = targetSystemService.handleTeamSystemAuth(tid, sid, delete);
+            if (b) {return  Result.success();}
+            else return Result.failed("删除失败 ");
+        }catch (BusinessException e) {
+            return Result.failed(e.getMessage());
+        }catch (Exception e){
+            throw e;
+        }
     }
     
     

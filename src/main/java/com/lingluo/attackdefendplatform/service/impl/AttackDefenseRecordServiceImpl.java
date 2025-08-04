@@ -1,5 +1,6 @@
 package com.lingluo.attackdefendplatform.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -7,13 +8,16 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
+import com.lingluo.attackdefendplatform.common.result.Result;
 import com.lingluo.attackdefendplatform.exception.BusinessException;
+import com.lingluo.attackdefendplatform.exception.SystemErrorType;
 import com.lingluo.attackdefendplatform.mapper.*;
 import com.lingluo.attackdefendplatform.model.bo.AttackRecordInfoBO;
 import com.lingluo.attackdefendplatform.model.bo.AttackTeamInfoBO;
 import com.lingluo.attackdefendplatform.model.bo.MemberInfoBO;
 import com.lingluo.attackdefendplatform.model.dto.*;
 import com.lingluo.attackdefendplatform.model.entity.*;
+import com.lingluo.attackdefendplatform.model.form.AttackRecordForm;
 import com.lingluo.attackdefendplatform.service.AttackDefenseRecordService;
 import com.lingluo.attackdefendplatform.service.impl.oss.MinioOssService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -388,6 +393,78 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
         return updated>0;
     }
 
+    @Override
+    public Boolean updateRecord(AttackRecordForm form) {
+        if (form.getId() == null) {
+            throw new BusinessException("更新攻防记录失败：记录ID不能为空。");
+        }
+        AttackDefenseRecord record = this.getById(form.getId());
+        if(record==null){
+            throw new BusinessException("记录不存在");
+        }
+
+        //如果是攻击队员想要更新队伍中被驳回的请求，那么应该只允许他更新状态为未审批
+        List<String> list = StpUtil.getRoleList();
+        if(!list.contains("umpire")&&!list.contains("admin")){
+            Integer attackTeam = record.getAttackTeam();
+            
+            QueryWrapper<AttackDefenseTeamMembers> teamMembersQueryWrapper = new QueryWrapper<>();
+            teamMembersQueryWrapper.eq("tid",attackTeam);
+            teamMembersQueryWrapper.eq("mid",Integer.parseInt(StpUtil.getLoginId().toString()));
+            AttackDefenseTeamMembers isInTeam = teamMembersMapper.selectOne(teamMembersQueryWrapper);
+            log.warn(String.valueOf(isInTeam));
+            
+            
+            if(form.getState()!=1||isInTeam==null){
+                throw new BusinessException("用户权限不足");
+            }
+        }
+
+
+        //如果是请求变更为审核中状态
+        if(form.getState()!=null&&form.getState()==4){
+            if(record.getState()==4){
+                //返回特殊状态码异常
+                throw SystemErrorType.RECORD_IS_IN_AUDITING.toException();
+            }
+        }
+
+
+
+        AttackDefenseRecord defenseRecord = new AttackDefenseRecord();
+        defenseRecord.setId(form.getId());
+
+        MultipartFile file = form.getFile();
+        if (file != null && !file.isEmpty()) {
+            try {
+                FileInfo fileInfo = minioOssService.uploadFile(file);
+                defenseRecord.setFile(fileInfo.getUrl()); // 更新文件 URL
+                defenseRecord.setFileName(fileInfo.getName());
+            } catch (Exception e) {
+                throw new BusinessException("文件附件上传失败：" + e.getMessage(), e);
+            }
+        }
+
+        // Optional.ofNullable检查非空再更新
+        Optional.ofNullable(form.getTitle()).ifPresent(defenseRecord::setTitle);
+        Optional.ofNullable(form.getAttack_team()).ifPresent(defenseRecord::setAttackTeam);
+        Optional.ofNullable(form.getDefend_team()).ifPresent(defenseRecord::setDefendTeam);
+        Optional.ofNullable(form.getSid()).ifPresent(defenseRecord::setSid);
+        Optional.ofNullable(form.getState()).ifPresent(defenseRecord::setState);
+        Optional.ofNullable(form.getSummary()).ifPresent(defenseRecord::setSummary);
+        Optional.ofNullable(form.getTemplate()).ifPresent(defenseRecord::setTemplate);
+        Optional.ofNullable(form.getUmpire()).ifPresent(defenseRecord::setUmpire);
+
+
+
+        boolean updated = this.updateById(defenseRecord);
+
+        if (!updated) {
+            throw new BusinessException("更新攻防记录失败，记录ID (ID: " + form.getId() + ") 可能不存在或数据未能成功保存。");
+        }
+        return true;
+    }
+
     //------------攻防记录操作
     
     @Override
@@ -408,11 +485,12 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
         
         
         QueryWrapper<AttackDefenseRecord> queryWrapper = new QueryWrapper<>();
-        
-        //如果是裁判就寻找对应负责裁判是自己的提交记录
-        if(role.equals("umpire")){
-            queryWrapper.eq("umpire",uid);
-        }
+       
+        //裁判不再限定，有权查看全部提交的成果审批
+//        //如果是裁判就寻找对应负责裁判是自己的提交记录
+//        if(role.equals("umpire")){
+//            queryWrapper.eq("umpire",uid);
+//        }
         
         
         //如果是攻击者就查找自己所在哪些队伍，然后从中筛选此攻击队伍提交的成果报告
