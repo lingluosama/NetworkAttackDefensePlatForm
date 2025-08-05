@@ -83,7 +83,8 @@ public class AttackDefenseMenuServiceImpl extends ServiceImpl<AttackDefenseMenuM
             throw new BusinessException("目标系统不存在");
         }
         dto.setSystem(targetSystem);
-
+        dto.setTotalSubmit(0);
+        dto.setValidSubmit(0);
         
         //保持记录唯一，使用map维护队伍提交数据
         Map<Integer, TeamScoreBO> teamScoreMap=new HashMap<>();
@@ -99,10 +100,13 @@ public class AttackDefenseMenuServiceImpl extends ServiceImpl<AttackDefenseMenuM
             auditQueryWrapper.eq("is_history",false);
             AttackDefenseAudit audit = auditService.getOne(auditQueryWrapper);
 
-            if(team!=null&&audit!=null){TeamScoreBO teamScoreBO = teamScoreMap.get(team.getId());
+            if(team!=null&&audit!=null){
+                dto.setTotalSubmit(dto.getTotalSubmit()+1);
+                if(audit.getIsPassed())dto.setValidSubmit(dto.getValidSubmit()+1);
+                TeamScoreBO teamScoreBO = teamScoreMap.get(team.getId());
             if(teamScoreBO==null){
                 teamScoreBO=new TeamScoreBO();
-                teamScoreBO.setScore(audit.getIsPassed()?audit.getScore():0);
+                teamScoreBO.setScore(audit.getIsPassed()?audit.getScore()==null?0:audit.getScore():0);
                 teamScoreBO.setSubmit(1);
                 teamScoreBO.setTeam(team);
                 teamScoreMap.put(team.getId(), teamScoreBO);

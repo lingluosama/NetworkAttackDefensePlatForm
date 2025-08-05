@@ -93,6 +93,9 @@ public class AttackDefenseTargetSystemImpl extends ServiceImpl<AttackDefenseTarg
                     .like("department",query.getKeyword());
         });
 
+        // 按照 id 降序排序
+        queryWrapper.orderByDesc("id");
+        
         int pageSize = (query.getLimit() != null && query.getLimit() > 0) ? query.getLimit() : 10;
         int currentPage = query.getOffset() + 1;
         Page<AttackDefenseTargetSystem> page = new Page<>(currentPage, pageSize);

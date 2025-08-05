@@ -67,10 +67,10 @@ public class AttackDefenseGlanceDataServiceImpl implements AttackDefenseGlanceDa
         dto.setActiveCount((int) targetSystemService.count(targetSystemQueryWrapper));
         targetSystemQueryWrapper=new QueryWrapper<>();
         targetSystemQueryWrapper.eq("status",2);
-        dto.setActiveCount((int) targetSystemService.count(targetSystemQueryWrapper));
+        dto.setUnUsableCount((int) targetSystemService.count(targetSystemQueryWrapper));
         targetSystemQueryWrapper=new QueryWrapper<>();
         targetSystemQueryWrapper.eq("status",3);
-        dto.setActiveCount((int) targetSystemService.count(targetSystemQueryWrapper));
+        dto.setStopUseCount((int) targetSystemService.count(targetSystemQueryWrapper));
         
         return dto;
     }

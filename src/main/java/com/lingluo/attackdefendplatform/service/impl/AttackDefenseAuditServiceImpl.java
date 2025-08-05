@@ -35,7 +35,7 @@ public class AttackDefenseAuditServiceImpl extends ServiceImpl<AttackDefenseAudi
     private final AttackDefenseTargetSystemService systemService;
     
     private  final AttackDefenseTeamMapper teamMapper;
-    
+
     @Override
     public AuditListDTO queryAudit(AuditQuery query) {
         LocalDateTime min_time = null;
@@ -51,10 +51,10 @@ public class AttackDefenseAuditServiceImpl extends ServiceImpl<AttackDefenseAudi
             throw new BusinessException("时间格式错误");
         }
 
-        
+
         QueryWrapper<AttackDefenseAudit> queryWrapper=new QueryWrapper<>();
-        
-        
+
+
         //根据关键词匹配获取记录id
         List<Integer> rids=new ArrayList<>();
         List<Integer> aids=new ArrayList<>();
@@ -63,12 +63,12 @@ public class AttackDefenseAuditServiceImpl extends ServiceImpl<AttackDefenseAudi
                     .select(AttackDefenseRecord::getId)
                     .like(AttackDefenseRecord::getTitle,query.getKeyword());
             recordService.list(recordQueryWrapper).stream().map(AttackDefenseRecord::getId).forEach(rids::add);
-            
+
             LambdaQueryWrapper<AttackDefenseMember> memberLambdaQueryWrapper=new LambdaQueryWrapper<AttackDefenseMember>()
                     .select(AttackDefenseMember::getId)
                     .like(AttackDefenseMember::getName,query.getKeyword());
             memberService.list(memberLambdaQueryWrapper).stream().map(AttackDefenseMember::getId).forEach(aids::add);
-            
+
         }
         //同时匹配记录标题和审批人
         if(!rids.isEmpty()){
@@ -77,7 +77,7 @@ public class AttackDefenseAuditServiceImpl extends ServiceImpl<AttackDefenseAudi
         if(!aids.isEmpty()){
             queryWrapper.in("aid",aids);
         }
-        
+
         //进行时间筛选
         if (min_time != null && max_time != null) {
             queryWrapper.between("create_time", min_time, max_time);
@@ -86,7 +86,7 @@ public class AttackDefenseAuditServiceImpl extends ServiceImpl<AttackDefenseAudi
         } else if (max_time != null) {
             queryWrapper.le("create_time", max_time);
         }
-        
+
         queryWrapper.orderByDesc("create_time");
 
         int pageSize = (query.getLimit() != null && query.getLimit() > 0) ? query.getLimit() : 10;
@@ -97,7 +97,7 @@ public class AttackDefenseAuditServiceImpl extends ServiceImpl<AttackDefenseAudi
 
         AuditListDTO dto = new AuditListDTO();
         dto.setMount((int) mount);
-        
+
         //获取靶标系统和队伍名称
         List<AuditInfoBO> auditInfoBOS = defenseAuditPage.getRecords().stream().map(audit -> {
 
@@ -106,24 +106,29 @@ public class AttackDefenseAuditServiceImpl extends ServiceImpl<AttackDefenseAudi
 
             AttackDefenseRecord attackDefenseRecord = recordService.getById(audit.getRid());
 
+            // 增加空值检查，防止 attackDefenseRecord 为空
+            if (attackDefenseRecord != null) {
+                // 获取靶标系统相关信息
+                AttackDefenseTargetSystem targetSystem = systemService.getById(attackDefenseRecord.getSid());
 
-            //获取靶标系统相关信息
-            AttackDefenseTargetSystem targetSystem = systemService.getById(attackDefenseRecord.getSid());
-            infoBO.setSid(targetSystem.getId());
-            infoBO.setSystemName(targetSystem.getName());
-            infoBO.setIp(targetSystem.getIp());
+                // 增加空值检查，防止 targetSystem 为空
+                if (targetSystem != null) {
+                    infoBO.setSid(targetSystem.getId());
+                    infoBO.setSystemName(targetSystem.getName());
+                    infoBO.setIp(targetSystem.getIp());
 
-            //获取队伍相关信息
-            QueryWrapper<AttackDefenseTeam> teamQueryWrapper = new QueryWrapper<>();
-            teamQueryWrapper.eq("id", targetSystem.getTid());
-            infoBO.setTeam(teamMapper.selectOne(teamQueryWrapper));
-
+                    // 获取队伍相关信息
+                    QueryWrapper<AttackDefenseTeam> teamQueryWrapper = new QueryWrapper<>();
+                    teamQueryWrapper.eq("id", targetSystem.getTid());
+                    infoBO.setTeam(teamMapper.selectOne(teamQueryWrapper));
+                }
+            }
 
             return infoBO;
 
         }).toList();
         dto.setList(auditInfoBOS);
-    
+
         return dto;
     }
 

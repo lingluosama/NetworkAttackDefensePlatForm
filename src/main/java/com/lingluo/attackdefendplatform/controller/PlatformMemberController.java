@@ -102,10 +102,10 @@ public class PlatformMemberController {
     public Result<Void> updateMember(
             @Valid AttackTeamMemberForm form
     ){
-        if(StpUtil.getLoginId()!=form.getId()&&!StpUtil.getRoleList().contains("admin")){
+        if(Integer.parseInt(StpUtil.getLoginId().toString())!=form.getId()&&!StpUtil.getRoleList().contains("admin")){
             return Result.failed("权限不足");
         }
-        
+            
         try {
             Boolean b = attackDefenseMemberService.updateMemberInfo(form);
             if(b)return Result.success();

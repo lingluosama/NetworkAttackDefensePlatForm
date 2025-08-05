@@ -15,4 +15,8 @@ public class ScreenDataDTO {
     
     List<TeamScoreBO> teamInfos;
     
+    Integer totalSubmit;
+    
+    Integer validSubmit;
+    
 }
