@@ -92,7 +92,7 @@ public class SystemConfigController {
         return Result.success(menuService.list(queryWrapper));
     }
         
-    @Operation(description = "大屏数据")
+    @Operation(description = "靶标大屏数据")
     @SaCheckRole("admin")
     @GetMapping( "/screen/{sid}")
     public Result<ScreenDataDTO> getScreenData(@PathVariable Integer sid){

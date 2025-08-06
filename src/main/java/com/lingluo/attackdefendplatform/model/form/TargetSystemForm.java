@@ -1,5 +1,6 @@
 package com.lingluo.attackdefendplatform.model.form;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -85,4 +86,10 @@ public class TargetSystemForm implements Serializable {
     private Integer tid;
     @Schema(description = "是否启用为攻击目标")
     private Boolean in_use;
+
+    @Schema(description = "域名")
+    private String domain;
+
+    @Schema(description = "内网ip")
+    private String intranetIp;
 }

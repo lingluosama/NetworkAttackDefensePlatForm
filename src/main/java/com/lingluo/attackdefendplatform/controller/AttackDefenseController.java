@@ -57,6 +57,10 @@ public class AttackDefenseController {
     public Result<Void> createAttackRecord(
             @Valid AttackRecordForm form
     ){
+        
+        
+        
+        
         AttackDefenseRecord defenseRecord = new AttackDefenseRecord();
         MultipartFile file = form.getFile();
         if(file!=null&&!file.isEmpty()){
@@ -189,7 +193,7 @@ public class AttackDefenseController {
         }
     }
     
-
+    
     //--------更新接口
     @SaCheckRole("attacker")
     @Operation(summary = "更新攻防审批记录(进行审批)")
@@ -237,7 +241,7 @@ public class AttackDefenseController {
         Optional.ofNullable(form.getTitle()).ifPresent(template::setTitle);
         Optional.ofNullable(form.getType()).ifPresent(template::setType); // 确保 AttackTemplateForm 中有 type 字段
         Optional.ofNullable(form.getDescription()).ifPresent(template::setDescription);
-
+        Optional.ofNullable(form.getAttack()).ifPresent(template::setAttack);
         // 处理 in_use 字段：如果前端提供了，就更新；如果没提供，保持不变
         Optional.ofNullable(form.getIn_use()).ifPresent(template::setInUse);
 

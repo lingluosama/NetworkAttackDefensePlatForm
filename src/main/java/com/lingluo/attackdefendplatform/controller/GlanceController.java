@@ -1,5 +1,6 @@
 package com.lingluo.attackdefendplatform.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.lingluo.attackdefendplatform.common.result.Result;
 import com.lingluo.attackdefendplatform.model.dto.MainTableDataDTO;
 import com.lingluo.attackdefendplatform.model.dto.TargetTableDataDTO;
@@ -17,16 +18,19 @@ public class GlanceController {
     
     private final AttackDefenseGlanceDataService dataService;
     
+    @SaCheckLogin
     @GetMapping("/mainTable")
     public Result<MainTableDataDTO> glanceMainTable() {
         return Result.success(dataService.getMainTableData());
     }
     
+    @SaCheckLogin
     @GetMapping("/templateTable")
     public Result<TemplateTableDataDTO> glanceTemplateTable() {
         return Result.success(dataService.getTemplateTableData());
     }
     
+    @SaCheckLogin
     @GetMapping("/targetTable")
     public Result<TargetTableDataDTO> glanceTargetTable() {
         return Result.success(dataService.getTargetTableData());

@@ -39,6 +39,9 @@ public class AttackDefenseTemplatesServiceImpl extends ServiceImpl<AttackDefense
         if(attack!=null){
             queryWrapper.eq("attack",attack);
         }
+        
+        queryWrapper.orderByDesc("id");
+        
         //分页查询
         int pageSize = (limit != null && limit > 0) ? limit : 10;
         int currentPage = offset+1;

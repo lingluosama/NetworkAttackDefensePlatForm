@@ -204,3 +204,44 @@ BEGIN
 END //
 
 DELIMITER ;
+
+
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (5, '/home', 'admin', '主控台', -1, 'control');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (6, '/home', 'attacker', '主控台', -1, 'control');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (7, '/home', 'defender', '主控台', -1, 'control');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (8, '/home', 'umpire', '主控台', -1, 'control');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (9, '/home', 'leader', '主控台', -1, 'control');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (10, '/report', 'admin', '攻击成果管理', -1, 'select');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (11, '/approval', 'admin', '攻击成果审批', 10, '');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (12, '/preview', 'admin', '攻击成果预览', 10, '');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (13, '/templates', 'admin', '模板管理', -1, 'file');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (14, '/report', 'umpire', '攻击成果管理', -1, 'select');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (15, '/approval', 'umpire', '攻击成果审批', 14, '');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (16, '/templates', 'umpire', '模板管理', -1, 'file');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (17, '/preview', 'umpire', '攻击成果预览', 14, '');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (18, '/target', 'admin', '靶标管理', -1, 'shoot');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (19, '/list', 'admin', '靶标列表', 18, '');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (20, '/create', 'admin', '创建标靶', 18, '');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (21, '/target', 'umpire', '靶标管理', -1, 'shoot');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (22, '/list', 'umpire', '靶标列表', 21, '');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (23, '/team', 'admin', '队伍管理', -1, 'team');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (24, '/attack', 'admin', '攻击队伍管理', 23, '');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (25, '/defense', 'admin', '防守队伍管理', 23, '');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (26, '/user', 'admin', '用户管理', -1, 'users');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (27, '/member', 'admin', '系统用户管理', 26, '');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (28, '/system', 'admin', '系统设置', -1, 'setting');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (30, '/info', 'admin', '系统基本信息', 28, '');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (32, '/attackerReport', 'attacker', '成果管理', -1, 'select');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (33, '/create', 'attacker', '创建报告', 32, '');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (34, '/list', 'attacker', '报告记录', 32, '');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (35, '/attackTemplates', 'attacker', '成果模板', -1, 'file');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (36, '/attackTarget', 'attacker', '攻击靶标', -1, 'shoot');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (37, '/defenderTarget', 'defender', '我的靶标', -1, 'shoot');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (38, '/defenderTemplates', 'defender', '模板下载', -1, 'file');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (39, '/create', 'defender', '创建靶标', 37, '');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (40, '/list', 'defender', '靶标列表', 37, '');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (41, '/create', 'umpire', '创建靶标', 21, null);
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (42, '/myProfile', 'admin', '个人中心', -1, 'user');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (43, '/myProfile', 'umpire', '个人中心', -1, 'user');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (44, '/myProfile', 'attacker', '个人中心', -1, 'user');
+INSERT INTO master.attack_defense_menu (id, path, auth, title, parent, icon) VALUES (45, '/myProfile', 'defender', '个人中心', -1, 'user');

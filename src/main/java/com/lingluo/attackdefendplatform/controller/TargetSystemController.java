@@ -42,6 +42,9 @@ public class TargetSystemController {
         system.setAccessAccount(form.getAccess_account());
         system.setPassword(form.getPassword()); //密码后续应该增加对称加密处理
         system.setTid(form.getTid());
+        system.setDomain(form.getDomain());
+        system.setIntranetIp(form.getIntranetIp());
+        
         boolean saved = targetSystemService.save(system);
 
         if (saved) {

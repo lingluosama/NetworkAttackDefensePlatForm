@@ -3,6 +3,7 @@ package com.lingluo.attackdefendplatform.model.query;
 import com.lingluo.attackdefendplatform.common.base.BasePageQuery;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serial;
@@ -14,6 +15,7 @@ import java.io.Serializable;
 @Schema(description = "靶标系统搜索对象")
 @Getter
 @Setter
+@NoArgsConstructor
 public class TargetSystemQuery extends BasePageQuery implements Serializable {
 
     @Schema(description = "偏移量")

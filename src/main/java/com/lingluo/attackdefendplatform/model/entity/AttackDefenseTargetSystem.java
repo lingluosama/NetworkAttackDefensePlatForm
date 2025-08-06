@@ -92,5 +92,11 @@ public class AttackDefenseTargetSystem implements Serializable {
     @TableField("tid")
     private Integer tid;
     
+    @TableField("domain")
+    private String domain;
+    
+    @TableField("intranet_ip")
+    private String intranetIp;
+    
 
 }
