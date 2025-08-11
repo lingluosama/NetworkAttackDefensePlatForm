@@ -18,6 +18,7 @@ import com.lingluo.attackdefendplatform.model.bo.MemberInfoBO;
 import com.lingluo.attackdefendplatform.model.dto.*;
 import com.lingluo.attackdefendplatform.model.entity.*;
 import com.lingluo.attackdefendplatform.model.form.AttackRecordForm;
+import com.lingluo.attackdefendplatform.service.AttackDefenseMemberService;
 import com.lingluo.attackdefendplatform.service.AttackDefenseRecordService;
 import com.lingluo.attackdefendplatform.service.impl.oss.MinioOssService;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,7 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
     private final AttackDefenseTargetSystemMapper systemMapper;
     private final AttackDefenseTemplatesMapper templatesMapper;
     private final MinioOssService minioOssService;
+    private final AttackDefenseMemberService memberService;
 
 
     //---------队伍增删改查
@@ -271,6 +273,12 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
             Integer mid,
             Integer tid
     ){
+
+        AttackDefenseTeam team = teamMapper.selectById(tid);
+        if(team.getAttack()&&!memberService.inAccreditationDuration(mid)){
+            throw new BusinessException("未进行认证或认证已过期");
+        }   
+
         try {
             AttackDefenseTeamMembers teamMembers = new AttackDefenseTeamMembers();
             teamMembers.setTid(tid);
@@ -594,13 +602,14 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
             
             if(system!=null)attackRecordInfoBO.setTargetSystem(system.getName());
 
-
+            attackRecordInfoBO.setScore(records.getScore());
             attackRecordInfoBO.setId(records.getId());
             attackRecordInfoBO.setCommit(records.getCommitTime());
             attackRecordInfoBO.setId(records.getId());
             attackRecordInfoBO.setState(records.getState());
             attackRecordInfoBO.setTemplate(records.getTemplate());
             attackRecordInfoBO.setTitle(records.getTitle());
+            attackRecordInfoBO.setFile(records.getFile());
             return attackRecordInfoBO;
         }).toList();
 

@@ -16,10 +16,7 @@ import com.lingluo.attackdefendplatform.model.form.AttackRecordForm;
 import com.lingluo.attackdefendplatform.model.form.AttackTeamForm;
 import com.lingluo.attackdefendplatform.model.form.AttackTemplateForm;
 import com.lingluo.attackdefendplatform.model.query.AttackRecordQuery;
-import com.lingluo.attackdefendplatform.service.AttackDefenseAuditService;
-import com.lingluo.attackdefendplatform.service.AttackDefenseRecordService;
-import com.lingluo.attackdefendplatform.service.AttackDefenseTargetSystemService;
-import com.lingluo.attackdefendplatform.service.AttackDefenseTemplatesService;
+import com.lingluo.attackdefendplatform.service.*;
 import com.lingluo.attackdefendplatform.service.impl.oss.MinioOssService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,6 +44,7 @@ public class AttackDefenseController {
     private final AttackDefenseTargetSystemService targetSystemService;
     private final AttackDefenseAuditService auditService;
     private final MinioOssService minioOssService;
+    private final AttackDefenseMemberService memberService;
     
     // 时间格式化器
 
@@ -58,8 +56,9 @@ public class AttackDefenseController {
             @Valid AttackRecordForm form
     ){
         
-        
-        
+        if(!memberService.inAccreditationDuration()){
+            return Result.failed("未进行认证或认证已过期");
+        }
         
         AttackDefenseRecord defenseRecord = new AttackDefenseRecord();
         MultipartFile file = form.getFile();
@@ -82,6 +81,8 @@ public class AttackDefenseController {
         defenseRecord.setSid(form.getSid());
         defenseRecord.setUmpire(form.getUmpire());
         defenseRecord.setCommitTime(LocalDateTime.now());
+        
+        
         
         boolean saved = recordService.save(defenseRecord);
         if(!saved)return Result.failed("保存失败，请检查字段是否合规");
@@ -139,7 +140,7 @@ public class AttackDefenseController {
     @SaCheckRole("umpire")
     @Operation(summary = "新建攻防队伍")
     @PostMapping("/team/create")
-    public Result<Void> createAttackTeam(
+    public Result<Void> createAttackTeam(   
             @Valid AttackTeamForm form 
     ) {
         Boolean created = recordService.createTeam(
@@ -164,6 +165,7 @@ public class AttackDefenseController {
        Integer mid,
        Integer tid
     ) {
+        
         try {
             Boolean b = recordService.addMemberToTeam(mid, tid);
             if(b)return Result.success();

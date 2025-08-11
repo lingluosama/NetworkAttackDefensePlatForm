@@ -1,13 +1,7 @@
 package com.lingluo.attackdefendplatform.model.bo;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 /**
  * @description: 用户的非敏感信息
@@ -48,5 +42,13 @@ public class MemberInfoBO {
 
     @Schema(description = "用户角色")
     private String role;
+    
+    @Schema(description = "认证到期时间")
+    private String accreditationTime; 
+    
+    @Schema(description = "认证书文件")
+    private String accreditation;
+
+    private String accreditationComment;
 
 }

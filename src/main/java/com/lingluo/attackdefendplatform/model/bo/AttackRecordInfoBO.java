@@ -51,11 +51,17 @@ public class AttackRecordInfoBO {
     @ExcelProperty(value = "靶标系统名称")
     private String targetSystem;
     
+    @ExcelProperty(value = "得分")
+    private Double score;
+    
     /**
      * 演习状态 (1:等待开始; 2:处置中; 3:已完成)
      */
     @ExcelProperty(value = "状态")
     private Integer state;
+    
+    @ExcelProperty(value = "附件地址")
+    private String file;
     
     
 }

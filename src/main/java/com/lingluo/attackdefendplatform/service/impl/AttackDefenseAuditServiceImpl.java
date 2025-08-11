@@ -154,9 +154,11 @@ public class AttackDefenseAuditServiceImpl extends ServiceImpl<AttackDefenseAudi
         if(record==null){throw  new BusinessException("未找到指定记录");}
         if(pass){
             record.setState(3);
+            record.setScore(score);
             recordService.updateById(record);
         }else{
             record.setState(2);
+            record.setScore(0.0);
             recordService.updateById(record);
         }
         

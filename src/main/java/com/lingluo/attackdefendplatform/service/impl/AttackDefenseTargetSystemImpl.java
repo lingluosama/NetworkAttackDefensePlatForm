@@ -24,6 +24,7 @@ import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -37,89 +38,102 @@ public class AttackDefenseTargetSystemImpl extends ServiceImpl<AttackDefenseTarg
     private final AttackDefenseTeamMembersMapper teamMembersMapper;
     private  final AttackDefenseTeamMapper teamMapper;
     private final AttackDefenseTargetTeamMapper targetTeamMapper;
-    
+
     @Override
     public TargetSystemResponseDTO querySystem(TargetSystemQuery query) {
-        
+
         QueryWrapper<AttackDefenseTargetSystem> queryWrapper = new QueryWrapper<>();
-        //监测用户是否为防守方用户
+
         String loginId = (String) StpUtil.getLoginId();
         AttackDefenseMember member = memberService.getById(Integer.parseInt(loginId));
-        if(member==null){throw  new BusinessException("未知的权限等级");}
-
-        
-        //防守方只能看自己队伍发布的靶标
-        if(member.getRole().equals("defender")){
-            
-            //获取所在队伍id
-            List<Integer> tids = getUserTeamIds(member.getId());
-            
-            if(!tids.isEmpty()){
-                queryWrapper.in("tid",tids);
-            }
-            else return new TargetSystemResponseDTO();
-            
+        if(member==null){
+            throw new BusinessException("未知的权限等级");
         }
-        
-        //如果是攻方要先筛选授权的系统
-        if(member.getRole().equals("attacker")){
-            //获取所在队伍id
+
+        // 根据用户角色设置主查询条件
+        if(member.getRole().equals("defender")){
             List<Integer> tids = getUserTeamIds(member.getId());
-                
+            if(!tids.isEmpty()){
+                queryWrapper.in("tid", tids);
+            } else {
+                // 如果防守方没有队伍，直接返回空结果
+                return new TargetSystemResponseDTO();
+            }
+        } else if(member.getRole().equals("attacker")){
+            List<Integer> tids = getUserTeamIds(member.getId());
             if(!tids.isEmpty()){
                 LambdaQueryWrapper<AttackDefenseTargetTeam> targetTeamLambdaQueryWrapper = new LambdaQueryWrapper<AttackDefenseTargetTeam>()
                         .select(AttackDefenseTargetTeam::getSid)
-                        .in(AttackDefenseTargetTeam::getTid,tids);
+                        .in(AttackDefenseTargetTeam::getTid, tids);
                 List<Integer> systemIds = targetTeamMapper.selectList(targetTeamLambdaQueryWrapper).stream().map(AttackDefenseTargetTeam::getSid).toList();
 
-                //在已经授权的系统里筛选
-                if(!systemIds.isEmpty())queryWrapper.in("id",systemIds);
-                else return new TargetSystemResponseDTO();
-            }else return new TargetSystemResponseDTO();
-            
+                if(!systemIds.isEmpty()){
+                    queryWrapper.in("id", systemIds);
+                } else {
+                    return new TargetSystemResponseDTO();
+                }
+            } else {
+                return new TargetSystemResponseDTO();
+            }
         }
-        
 
-        if(query.getType()!=null && !query.getType().isEmpty()){queryWrapper.eq("type",query.getType());}
-        
-        log.warn(String.valueOf(query.getStatus()));
-        Optional.ofNullable(query.getStatus()).ifPresent(status->queryWrapper.eq("status",status));
-        
-        
-        //同时匹配名称和部门
-        queryWrapper.and(q->{
-            q.like("name",query.getKeyword())
-                    .or()
-                    .like("department",query.getKeyword());
-        });
+        // 添加通用的筛选条件
+        if(query.getType() != null && !query.getType().isEmpty()){
+            queryWrapper.eq("type", query.getType());
+        }
+
+        Optional.ofNullable(query.getStatus()).ifPresent(status -> queryWrapper.eq("status", status));
+
+        // 处理关键字搜索
+        if(query.getKeyword() != null && !query.getKeyword().isEmpty()){
+            queryWrapper.and(wrapper -> {
+                // 搜索靶标名称、部门
+                wrapper.like("name", query.getKeyword())
+                        .or()
+                        .like("department", query.getKeyword());
+
+                // 搜索防守队伍名称，这部分逻辑需要单独处理
+                LambdaQueryWrapper<AttackDefenseTeam> teamLambdaQueryWrapper = new LambdaQueryWrapper<AttackDefenseTeam>()
+                        .select(AttackDefenseTeam::getId)
+                        .like(AttackDefenseTeam::getCnName, query.getKeyword())
+                        .or()
+                        .like(AttackDefenseTeam::getEnName, query.getKeyword());
+
+                List<Integer> tidsByKeyword = teamMapper.selectList(teamLambdaQueryWrapper).stream().map(AttackDefenseTeam::getId).toList();
+
+                if (!tidsByKeyword.isEmpty()) {
+                    wrapper.or().in("tid", tidsByKeyword);
+                }
+            });
+        }
 
         // 按照 id 降序排序
         queryWrapper.orderByDesc("id");
-        
+
+        // 分页和结果处理
         int pageSize = (query.getLimit() != null && query.getLimit() > 0) ? query.getLimit() : 10;
         int currentPage = query.getOffset() + 1;
         Page<AttackDefenseTargetSystem> page = new Page<>(currentPage, pageSize);
 
         long count = this.count(queryWrapper);
         Page<AttackDefenseTargetSystem> targetSystemPage = this.page(page, queryWrapper);
-        
+
         TargetSystemResponseDTO responseDTO = new TargetSystemResponseDTO();
         responseDTO.setMount((int) count);
+
         List<TargetSystemInfoBO> infoBOS = targetSystemPage.getRecords().stream().map(system -> {
             TargetSystemInfoBO infoBO = new TargetSystemInfoBO();
             infoBO.setTargetSystem(system);
 
-            // 获取联络人相关信息
             AttackDefenseMember contactor = memberService.getById(system.getContact());
             infoBO.setContactor(contactor);
 
-            //获取发布靶标的队伍
             QueryWrapper<AttackDefenseTeam> teamQueryWrapper = new QueryWrapper<>();
             teamQueryWrapper.eq("id", system.getTid());
             AttackDefenseTeam defenseTeam = teamMapper.selectOne(teamQueryWrapper);
             AttackTeamInfoBO teamInfoBO = new AttackTeamInfoBO();
             teamInfoBO.setTeamInfo(defenseTeam);
-            //获取队伍的队长信息
+
             if(defenseTeam!=null&&defenseTeam.getLeader()!=null){
                 AttackDefenseMember leader = memberService.getById(defenseTeam.getLeader());
                 teamInfoBO.setLeaderInfo(leader.toMemberInfoBO());
@@ -128,13 +142,11 @@ public class AttackDefenseTargetSystemImpl extends ServiceImpl<AttackDefenseTarg
             infoBO.setDefenseTeam(teamInfoBO);
             return infoBO;
         }).toList();
-        
-        responseDTO.setList(infoBOS);
 
+        responseDTO.setList(infoBOS);
 
         return responseDTO;
     }
-
     @Override
     public Boolean deleteSystem(Integer id) {
         LambdaUpdateWrapper<AttackDefenseRecord> updateWrapper = new LambdaUpdateWrapper<>();

@@ -1,15 +1,12 @@
 package com.lingluo.attackdefendplatform.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.lingluo.attackdefendplatform.model.bo.MemberInfoBO;
 import com.lingluo.attackdefendplatform.model.dto.AuthorizedDTO;
 import com.lingluo.attackdefendplatform.model.dto.MemberBelongInfoDTO;
 import com.lingluo.attackdefendplatform.model.dto.MemberListInfoDTO;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseMember;
-import com.lingluo.attackdefendplatform.model.entity.AttackDefenseTeamMembers;
 import com.lingluo.attackdefendplatform.model.form.AttackTeamMemberForm;
-
-import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface AttackDefenseMemberService extends IService<AttackDefenseMember> {
     AuthorizedDTO register(
@@ -35,6 +32,19 @@ public interface AttackDefenseMemberService extends IService<AttackDefenseMember
     
     Boolean updateMemberInfo(AttackTeamMemberForm form);
     
+    Boolean updateAccreditation(
+            Integer uid,
+            MultipartFile file
+    );
     
+    Boolean trialAccreditation(
+            Integer uid,
+            Integer expiration,
+            Boolean pass,
+            String comment
+    );
+    
+    Boolean inAccreditationDuration();
+    Boolean inAccreditationDuration(Integer uid);
     
 }

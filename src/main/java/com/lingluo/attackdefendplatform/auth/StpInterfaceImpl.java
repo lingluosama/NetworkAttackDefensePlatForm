@@ -6,6 +6,7 @@ import com.lingluo.attackdefendplatform.common.enums.RoleEnum;
 import com.lingluo.attackdefendplatform.model.entity.AttackDefenseMember;
 import com.lingluo.attackdefendplatform.service.AttackDefenseMemberService;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -20,7 +21,7 @@ import java.util.List;
  * 从会话中获取角色和权限
  */
 @Component 
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class StpInterfaceImpl implements StpInterface {
     private static final Logger log = LoggerFactory.getLogger(StpInterfaceImpl.class);
     //对于目前的业务需求，暂未配置权限等级的检查

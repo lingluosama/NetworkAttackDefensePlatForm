@@ -104,4 +104,7 @@ public class AttackDefenseRecord {
     
     @Schema(description = "裁判id")
     private Integer umpire;
+    
+    @Schema(description = "得分")
+    private Double score;
 }

@@ -97,6 +97,16 @@ public class AttackDefenseMember {
 
     @Schema(description = "用户密码")
     private String password ;
+    
+    @TableField("accreditation_time")
+    private LocalDateTime accreditationTime;
+    
+    @TableField("accreditation")
+    private String accreditation;
+    
+    @TableField("accreditation_comment")
+    private String accreditationComment;
+    
 
     /**
      * 将当前 AttackDefenseMember 实体转换为 MemberInfoBO 业务对象。
@@ -115,6 +125,9 @@ public class AttackDefenseMember {
         bo.setOffice(this.office);
         bo.setState(this.state);
         bo.setRole(this.role);
+        bo.setAccreditationTime(this.accreditationTime.toString());
+        bo.setAccreditationComment(this.accreditationComment);
+        bo.setAccreditation(this.accreditation);
         return bo;
     }
 }

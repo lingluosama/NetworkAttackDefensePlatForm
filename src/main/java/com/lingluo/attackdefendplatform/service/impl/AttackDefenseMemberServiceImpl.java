@@ -1,5 +1,6 @@
 package com.lingluo.attackdefendplatform.service.impl;
 
+import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -25,6 +26,7 @@ import org.jasypt.util.password.PasswordEncryptor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -40,6 +42,8 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
     private final AttackDefenseTeamMembersMapper teamMembersMapper;
     private final MinioOssService minioOssService; 
     private final AttackDefenseTeamMapper teamMapper;
+    
+    
     @Override
     public AuthorizedDTO register (AttackTeamMemberForm form) {
         AttackDefenseMember member = new AttackDefenseMember();
@@ -53,9 +57,10 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
         member.setPassword(encryptPassword);
 
         String roleFromForm = form.getRole();
-        if (!RoleEnum.ATTACKER.getCode().equals(roleFromForm) && !RoleEnum.DEFENDER.getCode().equals(roleFromForm)) {
-            throw new BusinessException("请指定正确的角色组：'attacker' 或 'defender'");
-        }
+        //允许导入任意角色
+//        if (!RoleEnum.ATTACKER.getCode().equals(roleFromForm) && !RoleEnum.DEFENDER.getCode().equals(roleFromForm)) {
+//            throw new BusinessException("请指定正确的角色组：'attacker' 或 'defender'");
+//        }
         member.setRole(form.getRole());
 
         
@@ -65,7 +70,9 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
         Optional.ofNullable(form.getDepartment()).ifPresent(member::setDepartment);
         Optional.ofNullable(form.getOffice()).ifPresent(member::setOffice);
         member.setCreateTime(LocalDateTime.now());
-        member.setState(1);//默认用户状态
+        
+        if(form.getRole().equals("attacker"))member.setState(2);//攻击方默认未认证状态
+        member.setState(1);//防守方不需要认证
 
         //保存数据并进行登录
         try {
@@ -108,7 +115,7 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
 
         StpUtil.login(row.getId());
         String tokenValue = StpUtil.getTokenValue();
-        
+
         return new AuthorizedDTO(tokenValue,row.getRole(), row.getId());
         
     }
@@ -154,7 +161,7 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
         if(state!=null)queryWrapper.eq("state",state);
         if(department!=null&& !department.isEmpty()){queryWrapper.like("department",department);}
         if(keyword!=null&&!keyword.isEmpty())queryWrapper.and(q->q.like("name",keyword).or().like("phone",keyword));
-
+        queryWrapper.orderByDesc("id");
         long count = this.count(queryWrapper);
 
         int pageSize = (limit != null && limit > 0) ? limit : 10;
@@ -187,7 +194,9 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
         Optional.ofNullable(form.getOffice()).filter(StringUtils::hasText).ifPresent(existingMember::setOffice);
         Optional.ofNullable(form.getState()).ifPresent(existingMember::setState);
         Optional.ofNullable(form.getRole()).filter(StringUtils::hasText).ifPresent(existingMember::setRole);
-
+                
+        
+        
         // 处理密码加密，使用Optional判断
         Optional.ofNullable(form.getPassword())
                 .filter(StringUtils::hasText)
@@ -203,5 +212,76 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
         }
 
         return this.updateById(existingMember);
+    }
+
+    @Override
+    public Boolean updateAccreditation(Integer uid, MultipartFile file) {
+        FileInfo fileInfo = new FileInfo();
+        try {
+            fileInfo = minioOssService.uploadFile(file);
+        }catch (Exception e){
+            throw new BusinessException("文件上传失败，minio服务出现错误:"+e.getMessage());
+        }
+        if(uid==null){
+            throw new BusinessException("id不能为空,请检查登录状态");
+        }
+        if(file.isEmpty()){
+            throw new BusinessException("文件未成功上传，请检查类型是否支持");
+        }
+        AttackDefenseMember member = this.getById(uid);
+        if(member==null)throw new BusinessException("用户不存在");
+        member.setAccreditation(fileInfo.getUrl());
+        member.setState(3);
+
+        return this.updateById(member);
+    }
+
+    @Override
+    public Boolean trialAccreditation(Integer uid, Integer expiration,Boolean pass,String comment) {
+        if(uid==null){
+            throw new BusinessException("id不能为空,请检查登录状态");
+        }
+        AttackDefenseMember member = this.getById(uid);
+        if(member==null)throw new BusinessException("用户不存在");
+        if(pass){
+            LocalDateTime target = LocalDateTime.now().plusDays(uid);
+            member.setAccreditationTime(target);
+            member.setState(1);
+            member.setAccreditationComment(comment);
+            return this.updateById(member);
+        }else{
+            member.setAccreditationComment(comment);
+            member.setState(2);
+            return this.updateById(member);     
+        }
+    }
+
+    @Override
+    public Boolean inAccreditationDuration() {
+        
+        //裁判管理员直接放行
+        if(StpUtil.getRoleList().contains("admin")||StpUtil.getRoleList().contains("umpire")){
+            return true;
+        }
+        else if (StpUtil.getRoleList().contains("attacker")){
+            int uid = Integer.parseInt(StpUtil.getLoginId().toString());
+            AttackDefenseMember member = this.getById(uid);
+            //当前时间是否在过期时间之前
+            return LocalDateTime.now().isBefore(member.getAccreditationTime());
+        }
+        //防御者放行
+        return true;
+        
+    }
+
+    @Override
+    public Boolean inAccreditationDuration(Integer uid) {
+        AttackDefenseMember member = this.getById(uid);
+        if(member.getRole().equals("admin")
+                ||member.getRole().equals("umpire")
+                ||member.getRole().equals("defender"))return true;
+        
+        
+        return member.getAccreditationTime().isAfter(LocalDateTime.now());
     }
 }
