@@ -28,7 +28,7 @@ public class BusinessException extends RuntimeException {
     public BusinessException(String message, Object... args) {
         super(formatMessage(message, args));
     }
-
+    
     private static String formatMessage(String message, Object... args) {
         return MessageFormatter.arrayFormat(message, args).getMessage();
     }

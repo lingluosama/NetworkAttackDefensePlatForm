@@ -77,7 +77,7 @@ public class SystemConfigController {
             List<MenuResponseDTO> menuResponseDTOS = menuService.querySystemMenu(Integer.parseInt(id));
             return Result.success(menuResponseDTOS);
         }catch (BusinessException e){
-            return Result.failed(e.getMessage());
+            return Result.failed("A0231",e.getMessage());
         }catch (Exception e){
             throw  e;
         }
