@@ -74,6 +74,7 @@ public class AttackDefenseController {
 
         defenseRecord.setAttackTeam(form.getAttack_team());
         defenseRecord.setDefendTeam(form.getDefend_team());
+        defenseRecord.setSummary(form.getSummary());
         
         defenseRecord.setState(1);
         defenseRecord.setTitle(form.getTitle());
@@ -107,7 +108,6 @@ public class AttackDefenseController {
         }
 
         template.setType(form.getType());
-        
         template.setDescription(form.getDescription());
 
         //保证状态非空
@@ -227,7 +227,13 @@ public class AttackDefenseController {
 
         AttackDefenseTemplates template = new AttackDefenseTemplates();
         template.setId(form.getId());
-
+        
+        //删除旧文件
+        AttackDefenseTemplates oldTemplate = templatesService.getById(form.getId());
+        if(oldTemplate!=null&&oldTemplate.getContent()!=null){
+            minioOssService.deleteFile(oldTemplate.getContent());
+        }
+        
         // 文件上传
         MultipartFile contentFile = form.getContent();
         if (contentFile != null && !contentFile.isEmpty()) {

@@ -40,4 +40,7 @@ public class AttackTemplateForm implements Serializable {
 
     @Schema(description = "模板类型")   
     private String type;
+    
+    @Schema(description = "攻击总结")
+    private String summary;
 }

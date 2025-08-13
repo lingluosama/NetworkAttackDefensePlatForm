@@ -220,6 +220,12 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
             throw new BusinessException("未传入id");            
         }
         
+        
+        //删除旧头像文件
+        if(memberMapper.selectById(id).getAvatar()!=null&&!memberMapper.selectById(id).getAvatar().isEmpty()){
+            minioOssService.deleteFile(memberMapper.selectById(id).getAvatar());
+        }
+        
         String newAvatarUrl = null;
         if (avatar != null && !avatar.isEmpty()) {
             try {

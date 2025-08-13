@@ -42,7 +42,7 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
     private final AttackDefenseTeamMembersMapper teamMembersMapper;
     private final MinioOssService minioOssService; 
     private final AttackDefenseTeamMapper teamMapper;
-    
+    private final AttackDefenseMemberService memberService;
     
     @Override
     public AuthorizedDTO register (AttackTeamMemberForm form) {
@@ -72,7 +72,7 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
         member.setCreateTime(LocalDateTime.now());
         
         if(form.getRole().equals("attacker"))member.setState(2);//攻击方默认未认证状态
-        member.setState(1);//防守方不需要认证
+        else member.setState(1);//防守方不需要认证
 
         //保存数据并进行登录
         try {
@@ -202,6 +202,11 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
                 .filter(StringUtils::hasText)
                 .map(passwordEncryptor::encryptPassword) // 如果密码不为空，则加密
                 .ifPresent(existingMember::setPassword); // 将加密后的密码设置到实体
+        
+        //删除旧头像
+        if(existingMember.getAvatar()!=null&&!existingMember.getAvatar().isEmpty()){
+            minioOssService.deleteFile(existingMember.getAvatar());
+        }
         if(form.getAvatar()!=null&&!form.getAvatar().isEmpty()){
             try {
                 FileInfo fileInfo = minioOssService.uploadFile(form.getAvatar());
@@ -216,6 +221,13 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
 
     @Override
     public Boolean updateAccreditation(Integer uid, MultipartFile file) {
+        
+        
+        //删除旧文件
+        if(memberService.getById(uid).getAccreditation()!=null&&!memberService.getById(uid).getAccreditation().isEmpty()){
+            minioOssService.deleteFile(memberService.getById(uid).getAccreditation());
+        }
+        
         FileInfo fileInfo = new FileInfo();
         try {
             fileInfo = minioOssService.uploadFile(file);

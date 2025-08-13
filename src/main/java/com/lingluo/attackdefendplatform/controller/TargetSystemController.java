@@ -77,6 +77,7 @@ public class TargetSystemController {
         system.setAccessAccount(form.getAccess_account());
         system.setPassword(form.getPassword()); 
         system.setDomain(form.getDomain());
+        system.setTid(form.getTid());
         system.setIntranetIp(form.getIntranetIp());
         
         boolean updated = targetSystemService.updateById(system); // updateById会根据实体中的ID进行更新
