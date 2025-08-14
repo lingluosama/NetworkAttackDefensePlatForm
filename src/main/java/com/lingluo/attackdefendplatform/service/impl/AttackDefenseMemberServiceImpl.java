@@ -42,7 +42,6 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
     private final AttackDefenseTeamMembersMapper teamMembersMapper;
     private final MinioOssService minioOssService; 
     private final AttackDefenseTeamMapper teamMapper;
-    private final AttackDefenseMemberService memberService;
     
     @Override
     public AuthorizedDTO register (AttackTeamMemberForm form) {
@@ -224,8 +223,8 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
         
         
         //删除旧文件
-        if(memberService.getById(uid).getAccreditation()!=null&&!memberService.getById(uid).getAccreditation().isEmpty()){
-            minioOssService.deleteFile(memberService.getById(uid).getAccreditation());
+        if(this.getById(uid).getAccreditation()!=null&&!this.getById(uid).getAccreditation().isEmpty()){
+            minioOssService.deleteFile(this.getById(uid).getAccreditation());
         }
         
         FileInfo fileInfo = new FileInfo();
