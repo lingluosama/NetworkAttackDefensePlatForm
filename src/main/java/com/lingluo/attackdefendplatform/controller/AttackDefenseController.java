@@ -410,7 +410,7 @@ public class AttackDefenseController {
             Boolean removed=null;
             switch (target) {
                 case "record" -> {
-                    removed = recordService.removeById(id);
+                    removed = recordService.deleteRecord(id);
                 }
                 case "team" ->{
                     removed = recordService.deleteTeam(id);

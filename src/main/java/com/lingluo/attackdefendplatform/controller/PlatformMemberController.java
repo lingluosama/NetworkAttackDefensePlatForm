@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class PlatformMemberController {
     private final AttackDefenseMemberService memberService;
     
+    @SaCheckRole("admin")
     @Operation(summary = "注册接口")
     @PostMapping("/register")
     public Result<AuthorizedDTO> memberRegister(

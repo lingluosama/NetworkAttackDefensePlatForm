@@ -84,5 +84,6 @@ public interface AttackDefenseRecordService extends IService<AttackDefenseRecord
     
     Boolean updateRecord(AttackRecordForm form); 
     
+    Boolean deleteRecord(Integer id);
     
 }

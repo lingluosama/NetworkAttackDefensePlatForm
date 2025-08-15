@@ -57,25 +57,19 @@ public class AttackDefenseAuditServiceImpl extends ServiceImpl<AttackDefenseAudi
 
         //根据关键词匹配获取记录id
         List<Integer> rids=new ArrayList<>();
-        List<Integer> aids=new ArrayList<>();
         if(query.getKeyword()!=null&& !query.getKeyword().isEmpty()){
             LambdaQueryWrapper<AttackDefenseRecord> recordQueryWrapper=new LambdaQueryWrapper<AttackDefenseRecord>()
                     .select(AttackDefenseRecord::getId)
                     .like(AttackDefenseRecord::getTitle,query.getKeyword());
             recordService.list(recordQueryWrapper).stream().map(AttackDefenseRecord::getId).forEach(rids::add);
-
-            LambdaQueryWrapper<AttackDefenseMember> memberLambdaQueryWrapper=new LambdaQueryWrapper<AttackDefenseMember>()
-                    .select(AttackDefenseMember::getId)
-                    .like(AttackDefenseMember::getName,query.getKeyword());
-            memberService.list(memberLambdaQueryWrapper).stream().map(AttackDefenseMember::getId).forEach(aids::add);
-
+            
         }
+        
         //同时匹配记录标题和审批人
         if(!rids.isEmpty()){
-            queryWrapper.in("rid",rids);
-        }
-        if(!aids.isEmpty()){
-            queryWrapper.in("aid",aids);
+            queryWrapper.in("rid",rids).or().like("operator",query.getKeyword());
+        }else{
+            queryWrapper.like("operator",query.getKeyword());
         }
 
         //进行时间筛选

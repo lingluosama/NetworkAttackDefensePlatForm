@@ -41,11 +41,13 @@ public class AttackDefenseGlanceDataServiceImpl implements AttackDefenseGlanceDa
         
         //进行待审批的记录搜索
         AttackRecordPageDTO recordPageDTO = recordService.queryRecord(uid, 0, 100000, 1, null, null, null, true, null, null);
-        dto.setWaitAudit(recordPageDTO.getMount());
+        if(recordPageDTO!=null)dto.setWaitAudit(recordPageDTO.getMount());
+        else dto.setWaitAudit(0);
 
         recordPageDTO = recordService.queryRecord(uid, 0, 100000, null, null, null, null, true, null, null);
-        dto.setAttackRecord(recordPageDTO.getMount());
-        
+        if(recordPageDTO!=null)dto.setAttackRecord(recordPageDTO.getMount());
+        else dto.setAttackRecord(0);
+       
         //进行活跃靶标的查询
         TargetSystemQuery targetSystemQuery = new TargetSystemQuery();
         targetSystemQuery.setOffset(0);

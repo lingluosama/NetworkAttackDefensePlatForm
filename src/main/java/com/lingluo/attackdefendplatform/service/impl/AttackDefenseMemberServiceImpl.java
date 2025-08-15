@@ -73,18 +73,18 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
         if(form.getRole().equals("attacker"))member.setState(2);//攻击方默认未认证状态
         else member.setState(1);//防守方不需要认证
 
-        //保存数据并进行登录
+        //取消登录，变为纯数据添加
         try {
             boolean saved = this.save(member);
             if(!saved||member.getId()==null)throw new BusinessException("用户创建失败，手机号或用户名已被使用");
         }catch (DuplicateKeyException e){
             throw new BusinessException("手机号或用户名已被注册"); 
         }
+
+//        StpUtil.login(member.getId());
         
-        StpUtil.login(member.getId());
         
-        
-        return new AuthorizedDTO(StpUtil.getTokenValue(),member.getRole(),member.getId());
+        return new AuthorizedDTO(null,member.getRole(),member.getId());
     }
 
     @Override
@@ -255,7 +255,7 @@ public class AttackDefenseMemberServiceImpl extends ServiceImpl<AttackDefenseMem
         AttackDefenseMember member = this.getById(uid);
         if(member==null)throw new BusinessException("用户不存在");
         if(pass){
-            LocalDateTime target = LocalDateTime.now().plusDays(uid);
+            LocalDateTime target = LocalDateTime.now().plusDays(expiration);
             member.setAccreditationTime(target);
             member.setState(1);
             member.setAccreditationComment(comment);

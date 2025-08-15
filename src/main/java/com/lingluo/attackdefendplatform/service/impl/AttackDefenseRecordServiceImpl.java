@@ -18,6 +18,7 @@ import com.lingluo.attackdefendplatform.model.bo.MemberInfoBO;
 import com.lingluo.attackdefendplatform.model.dto.*;
 import com.lingluo.attackdefendplatform.model.entity.*;
 import com.lingluo.attackdefendplatform.model.form.AttackRecordForm;
+import com.lingluo.attackdefendplatform.service.AttackDefenseAuditService;
 import com.lingluo.attackdefendplatform.service.AttackDefenseMemberService;
 import com.lingluo.attackdefendplatform.service.AttackDefenseRecordService;
 import com.lingluo.attackdefendplatform.service.impl.oss.MinioOssService;
@@ -44,6 +45,7 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
     private final AttackDefenseTemplatesMapper templatesMapper;
     private final MinioOssService minioOssService;
     private final AttackDefenseMemberService memberService;
+    private final AttackDefenseAuditMapper auditMapper;
 
 
     //---------队伍增删改查
@@ -136,10 +138,13 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
         if (keyword != null && !keyword.isEmpty()) {
             queryWrapper.and(w -> w.like("cn_name", keyword).or().like("en_name", keyword));
         }
-
+        queryWrapper.orderByDesc("id");
+        
         // 执行分页查询，获取队伍列表
         Page<AttackDefenseTeam> attackDefenseTeamPage = teamMapper.selectPage(page, queryWrapper);
-
+        
+        
+        
         // 遍历队伍列表，获取每个队伍的队长信息，并构建 AttackTeamInfoBO 列表
         List<AttackTeamInfoBO> teamInfoBOList = attackDefenseTeamPage.getRecords().stream()
                 .map(team -> {
@@ -335,6 +340,9 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
         if (rows > 0 && memberToDelete.getTid() != null) {
             AttackDefenseTeam team = teamMapper.selectById(memberToDelete.getTid());
             if (team != null && team.getMemberNum() != null && team.getMemberNum() > 0) {
+                QueryWrapper<AttackDefenseTeamMembers> teamMembersQueryWrapper=new QueryWrapper<>();
+                teamMembersQueryWrapper.eq("mid",id);
+                teamMembersMapper.delete(teamMembersQueryWrapper);
                 team.setMemberNum(team.getMemberNum() - 1);
                 teamMapper.updateById(team);
             }
@@ -479,6 +487,15 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
         return true;
     }
 
+    @Override
+    public Boolean deleteRecord(Integer id) {
+        this.removeById(id);
+        QueryWrapper<AttackDefenseAudit> auditQueryWrapper=new QueryWrapper<>();
+        auditQueryWrapper.eq("rid",id);
+        auditMapper.delete(auditQueryWrapper);
+        return null;
+    }
+
     //------------攻防记录操作
     
     @Override
@@ -488,7 +505,7 @@ public class AttackDefenseRecordServiceImpl extends ServiceImpl<AttackDefenseRec
             Integer limit,
             Integer state,
             LocalDateTime begin_time,
-            LocalDateTime end_time,
+            LocalDateTime end_time, 
             String team_name,
             Boolean desc,
             String title,
